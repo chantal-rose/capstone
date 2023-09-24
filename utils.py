@@ -23,6 +23,8 @@ def compute_text_similarity(embedding1: torch.tensor, embedding2: torch.tensor) 
 def fetch_embedding_model() -> SentenceTransformer:
     """Downloads the model for creating embeddings if not cached.
 
+    Reference: https://www.sbert.net/docs/pretrained_models.html
+
     :return: Sentence Transformer model
     """
     return SentenceTransformer('multi-qa-MiniLM-L6-dot-v1')
