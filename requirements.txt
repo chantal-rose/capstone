@@ -1,0 +1,7 @@
+datasets==2.14.5
+pandas==2.1.1
+numpy==1.26.0
+sentencepiece==0.1.99
+sentence-transformers==2.2.2
+torch==2.0.1
+transformers==4.33.2
