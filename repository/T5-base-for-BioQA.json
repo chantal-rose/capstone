@@ -1,0 +1,9 @@
+{
+  "model_name": "ozcangundes/T5-base-for-BioQA",
+  "type": ["abstractive"],
+  "description": "Google's T5-base fine-tuned on BioASQ (secondary task) for Q&A downstream task.",
+  "downloads": 172,
+  "dataset":["bioasq"],
+  "domain": ["bio"],
+  "task": "question-answering"
+}
