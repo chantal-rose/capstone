@@ -1,0 +1,9 @@
+{
+  "model_name": "razent/SciFive-base-Pubmed_PMC",
+  "type": ["extractive","MCQ"],
+  "description":"In 2019, researchers from Google released the Text-to-Text Transfer Transformer (T5) trained on the Colossal Clean Crawled Corpus (C4) This approach achieved state-of-the-art (SOTA) results on a diverse range of tasks related to natural language processing (NLP). In the last decade, NLP in biomedicine has become more prominent (i.e. text mining of scientific literature, analysis of electronic health records). This development has created a need for NLP methods trained on corpora of biomedical literature containing the dense technical language characteristic of scientific writing. In this report, we introduce a T5-based model that has been successfully shifted into the biomedical domain.",
+  "downloads": 5237,
+  "domain": ["science"],
+  "dataset":["pubmed","pmc","C4"],
+  "task": "question-answering"
+}

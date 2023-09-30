@@ -1,0 +1,9 @@
+{
+    "model_name": "ozcangundes/T5-base-for-BioQA",
+    "type": ["extractive"],
+    "description":"This is the T5 model which is finetuned for the Biology domain",
+    "downloads": 172,
+    "domain": ["bio"],
+    "dataset":["BioASQ"],
+    "task": "question-answering"
+  }

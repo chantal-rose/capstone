@@ -1,0 +1,9 @@
+{
+    "model_name": "allenai/unifiedqa-t5-base",
+    "type": ["extractive","MCQ","abstractive"],
+    "description":"UNIFIEDQA performs  well, showing strong generalization from its out-offormat training data. Finally, fine-tuning this pre-trained QA model into specialized models results in a new state of the art on 10 factoid and commonsense QA datasets, establishing UNIFIEDQA as a strong starting point for building QA systems.",
+    "downloads": 1947,
+    "domain": ["None"],
+    "dataset":["SQUAD","BoolQ","RACE","NarQA","NewsQA","QuoRef","ROPES","DROP","MCTest","QASC"],
+    "task": "question-answering"
+  }
