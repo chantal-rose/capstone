@@ -148,6 +148,10 @@ def get_map():
     
     :return: list of dictionaries where each entry is meta_data of each map
     """  
+    
+    if "model_map.json" not in os.listdir(os.path.dirname(__file__)):
+        create_map(force=True)
+    
     try:
         with open(os.path.dirname(__file__) + '/model_map.json', "r") as f:
             model_map = json.load(f)
@@ -155,6 +159,7 @@ def get_map():
         model_map = []
             
     return model_map
-    
-            
-        
+
+
+if __name__ == "__main__":
+    get_map()
