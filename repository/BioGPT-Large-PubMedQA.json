@@ -5,5 +5,6 @@
   "downloads": 1849,
   "dataset":["pubmed_qa"],
   "domain": ["bio"],
-  "task": "question-answering"
+  "task": "question-answering",
+  "columns": [["question", "context"]]
 }

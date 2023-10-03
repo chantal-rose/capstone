@@ -4,5 +4,6 @@
   "description": "This model is finetuned on squad v2 dataset to answer questions where the context is quite long. longformer-base-4096 is a BERT-like model started from the RoBERTa checkpoint and pretrained for masked language modelling on long documents. It supports sequences of length up to 4,096. The squad v2 dataset is a dataset that was enhanced with unanswerable questions of both the extractive and open domain type.",
   "downloads": 3966,
   "dataset":["squad_v2"],
-  "task": "question-answering"
+  "task": "question-answering",
+  "columns": [["question", "context"]]
 }
