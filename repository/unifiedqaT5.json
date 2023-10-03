@@ -4,6 +4,7 @@
     "description":"UNIFIEDQA performs  well, showing strong generalization from its out-offormat training data. Finally, fine-tuning this pre-trained QA model into specialized models results in a new state of the art on 10 factoid and commonsense QA datasets, establishing UNIFIEDQA as a strong starting point for building QA systems.",
     "downloads": 1947,
     "domain": ["None"],
-    "dataset":["SQUAD","BoolQ","RACE","NarQA","NewsQA","QuoRef","ROPES","DROP","MCTest","QASC"],
+    "dataset":["squad_v2","boolq","race","quoref","ropes","drop","sagnikrayc/mctest","qasc"],
+    "columns":[["context","question"],["passage","question"],["article","question"],["context","question"],["situation","question"],["passage","question"],["story","question"],["combinedfact","question"]],
     "task": "question-answering"
   }
