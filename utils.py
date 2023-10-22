@@ -1,19 +1,80 @@
 """Module that contains all helper functions for the system.
 """
-
+from math import exp, pow, sqrt
 from functools import lru_cache
 
 from datasets import load_dataset
 import json
 import os.path
 import pandas as pd
+import nltk
 import numpy as np
-import torch
 from sentence_transformers import SentenceTransformer, util
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import spacy
+import torch
+
+nlp = spacy.load("en_core_web_lg")
 
 
-def compute_text_similarity(embedding1: torch.tensor, embedding2: torch.tensor) -> torch.Tensor:
-    """Computes similarity between two pieces of text.
+def get_cosine_similarity_score(answer1: str, answer2: str) -> float:
+    """Returns cosine similarity between two answers.
+
+    :param answer1: First answer to compare
+    :param answer2: Second answer to compare
+    :return: Cosine Similarity score
+    """
+    corpus = [answer1, answer2]
+    tfidf = TfidfVectorizer().fit_transform(corpus)
+
+    return cosine_similarity(tfidf[0:1], tfidf)[1]
+
+
+def get_jaccard_index(answer1: str, answer2: str) -> float:
+    """Returns jaccard similarity coefficent between two answers.
+
+    :param answer1: First answer to compare
+    :param answer2: Second answer to compare
+    :return: Jaccard Similarity Coefficent
+    """
+    answer1 = set(nltk.word_tokenize(answer1))
+    answer2 = set(nltk.word_tokenize(answer2))
+    if not answer1 or not answer2:
+        return 0
+    return len(answer1 & answer2) / len(answer1 | answer2)
+
+
+def get_euclidean_distance(answer1: str, answer2: str) -> float:
+    """Returns Euclidean distance, or L2 norm between the embedding vectors of two answers.
+
+    To compute the Euclidean distance we need vectors.
+    So we use spaCy’s in-built Word2Vec model to create text embeddings.
+
+    :param answer1: First answer to compare
+    :param answer2: Second answer to compare
+    :return: Euclidean distance
+    """
+    embeddings = [nlp(answer1).vector, nlp(answer2).vector]
+    distance = sqrt(sum(pow(a - b, 2) for a, b in zip(embeddings[0], embeddings[1])))
+    return 1 / exp(distance)
+
+
+def get_answer_similarity_score(answer1: str, answer2: str, similarity_metric: str = "cosine_similarity") -> float:
+    """Returns a similarity score between two answers.
+
+    It can use different metrics to calculate the score.
+
+    :param answer1: First answer to compare
+    :param answer2: Second answer to compare
+    :param similarity_metric: Metric to use for comparison
+    :return: Similarity score
+    """
+    return SIMILARITY_METRIC_FUNCTION_MAP[similarity_metric](answer1, answer2)
+
+
+def compute_similarity_between_embeddings(embedding1: torch.tensor, embedding2: torch.tensor) -> torch.Tensor:
+    """Computes similarity between the embeddings of two pieces of text.
 
     :param embedding1: First encoded text (likely the query embedding)
     :param embedding2: Second encoded text
@@ -51,7 +112,7 @@ def sample_rows_from_dataset(dataset: str,
     """Returns a dataframe of randomly sampled examples from a given dataset.
 
     :param dataset: HuggingFace dataset to download
-    :param column_names: Columns to return (in most cases, it will be ['question', 'context'], but for open-domain,
+    :param column_tuples: Columns to return (in most cases, it will be ['question', 'context'], but for open-domain,
         it will be ['question']
     :param num_samples: Number of rows to sample
     :param seed: Seed to use while shuffling dataset for reproducibility
@@ -74,7 +135,7 @@ def sample_rows_from_dataset(dataset: str,
         raise e
 
 
-def get_string_to_encode(data : dict):  
+def get_string_to_encode(data: dict):
     """Returns a string which is a concatenation of model description, sample questions, and sample contexts from
     the dataset the model was trained on.
 
@@ -90,12 +151,12 @@ def get_string_to_encode(data : dict):
     
     try:
         for dataset in data['dataset']:
-            if data['task'].lower()=="qa":
+            if data['task'].lower() == "qa":
                 df = sample_rows_from_dataset(dataset, qa_tuple, split='validation')
                 context_string = context_string + ' '.join(df['context'].tolist())
                 question_string = question_string + ' '.join(df['question'].tolist())
             
-            elif data['type'].lower()=="open domain":
+            elif data['type'].lower() == "open domain":
                 df = sample_rows_from_dataset(dataset, open_domain_tuple, split='validation')
                 context_string = context_string + ' '.join(df['context'].tolist())
                 question_string = question_string + ' '.join(df['question'].tolist())
@@ -111,7 +172,7 @@ def create_map(force: bool = False,
     it also populates the embedding of the model. 
 
     :param force: control flag to rerun the create map code for all .json files
-    :new_files: list of files for which the create map function should run of force flag is false
+    :param new_files: list of files for which the create map function should run of force flag is false
     :return: persists the map to a file "model_map.json"
     """  
     
@@ -123,12 +184,12 @@ def create_map(force: bool = False,
     except:
         past_map = []
     
-    
     if force is True:
         new_files = os.listdir(model_directory)
         past_map = []
             
-    model_file_list = [filename for filename in os.listdir(model_directory) if filename.endswith('.json') and filename in new_files]     
+    model_file_list = [filename for filename in os.listdir(model_directory) if filename.endswith('.json') and filename
+                       in new_files]
 
     for model_file in model_file_list:
         with open(model_directory + "/" + model_file) as model_json:
@@ -141,8 +202,7 @@ def create_map(force: bool = False,
     with open(os.path.dirname(__file__) + "/model_map.json", "w+") as f:
         f.write(model_map_list)
     
-    
-    
+
 def get_map():
     """Gets a list of dictionaries of the current persisted state of the model map
     
@@ -160,6 +220,12 @@ def get_map():
             
     return model_map
 
+
+SIMILARITY_METRIC_FUNCTION_MAP = {
+    "jaccard_index": get_jaccard_index,
+    "cosine_similarity": get_cosine_similarity_score,
+    "euclidean_distance": get_euclidean_distance,
+}
 
 if __name__ == "__main__":
     get_map()
