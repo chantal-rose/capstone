@@ -3,7 +3,9 @@
   "type": ["abstractive"],
   "description": "This model is the result produced by Christian Di Maio and Giacomo Nunziati for the Language Processing Technologies exam. Reference for Google's T5 fine-tuned on DuoRC for Generative Question Answering by just prepending the question to the context. The DuoRC dataset is an English language dataset of questions and answers gathered from crowdsourced AMT workers on Wikipedia and IMDb movie plots. The workers were given freedom to pick answer from the plots or synthesize their own answers. It contains two sub-datasets - SelfRC and ParaphraseRC. SelfRC dataset is built on Wikipedia movie plots solely. ParaphraseRC has questions written from Wikipedia movie plots and the answers are given based on corresponding IMDb movie plots.",
   "downloads": 4447,
-  "dataset":["duorc", "squad"],
+  "dataset": ["duorc", "squad"],
+  "configs": [["SelfRC", "ParaphraseRC"], []],
+  "columns": [["question", "plot"], ["question", "context"]],
   "domain": ["narrative"],
   "task": "question-answering"
 }
