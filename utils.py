@@ -233,6 +233,31 @@ def get_map():
     return model_map
 
 
+def filter_map(filter_field: str,
+               field_val: str,
+               k: int):
+    """Returns a filtered map of top k models based on field (type/domain)
+    :param filter_field: filter based on "type" or "domain"
+    :param field_val: value to be filtered on
+    :param k: top number of models to be returned
+    :return: list of model dictionaries
+    :raises Exception
+    """
+    model_map = get_map()  # getmap
+    filtered_models = []
+    for model in model_map:
+        if field_val in model[filter_field]:
+            filtered_models.append(model)
+        # if filter_field == "type":
+        #     if field_val in model['type']:
+        #         filtered_models.append(model)
+        # else:
+        #     if field_val in model[filter_field]:
+        #         filtered_models.append(model)
+
+    sorted_filtered_models = sorted(filtered_models, key=lambda x: x['downloads'], reverse=True)
+    return sorted_filtered_models[:k]
+
 def get_final_answer(answer_candidates: list, 
                      confidence_score_of_candidates: list):
     """Returns a single answer from a list of candidates based on a custom formula based on confidence scores and 
@@ -240,7 +265,7 @@ def get_final_answer(answer_candidates: list,
     
     :return: list of dictionaries where each entry is meta_data of each map
     """  
-    max_score_idx = 0;
+    max_score_idx = 0
     max_formula_score = -math.inf
     
     for i in range(len(answer_candidates)):
@@ -264,5 +289,4 @@ SIMILARITY_METRIC_FUNCTION_MAP = {
 }
 
 if __name__ == "__main__":
-    create_map(True, ["bloomz-560m.json"])
-    
+    create_map(False, "sciBERT.json")
