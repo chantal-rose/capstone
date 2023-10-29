@@ -7,5 +7,6 @@
   "configs": ["pqa_labeled"],
   "domain": ["bio"],
   "task": "question-answering",
-  "columns": [["question", "context"]]
+  "columns": [["question", "context"]],
+  "split" : ["train"]
 }

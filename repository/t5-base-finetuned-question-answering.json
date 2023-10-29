@@ -7,5 +7,6 @@
   "configs": ["SelfRC", "ParaphraseRC", ""],
   "columns": [["question", "plot"], ["question", "plot"], ["question", "context"]],
   "domain": ["narrative"],
-  "task": "question-answering"
+  "task": "question-answering",
+  "split" : ["validation", "validation", "validation"]
 }

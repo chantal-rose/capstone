@@ -1,9 +1,0 @@
-{
-    "model_name": "bigscience/T0pp",
-    "type": ["extractive","abstractive","MCQ"],
-    "description":"T0* shows zero-shot task generalization on English natural language prompts, outperforming GPT-3 on many tasks, while being 16x smaller. It is a series of encoder-decoder models trained on a large set of different tasks specified in natural language prompts. We convert numerous English supervised datasets into prompts, each with multiple templates using varying formulations. These prompted datasets allow for benchmarking the ability of a model to perform completely unseen tasks specified in natural language. To obtain T0*, we fine-tune a pretrained language model on this multitask mixture covering many different NLP tasks.",
-    "downloads": 9855,
-    "domain": ["None"],
-    "dataset":["all"],
-    "task": "question-answering"
-  }

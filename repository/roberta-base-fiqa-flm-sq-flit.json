@@ -6,5 +6,6 @@
   "dataset": ["squad"],
   "columns": [["question", "context"]],
   "domain": ["math", "finance"],
-  "task": "question-answering"
+  "task": "question-answering",
+  "split" : ["validation"]
 }

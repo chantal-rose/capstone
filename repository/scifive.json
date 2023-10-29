@@ -6,5 +6,6 @@
   "domain": ["science"],
   "dataset":["pubmed_qa","zhengyun21/PMC-Patients"],
   "columns":[["context","question"],["title","patient"]],
-  "task": "question-answering"
+  "task": "question-answering",
+  "split" : ["validation", "train"]
 }

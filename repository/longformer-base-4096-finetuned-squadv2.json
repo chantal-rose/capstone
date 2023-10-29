@@ -6,5 +6,6 @@
   "dataset":["squad_v2"],
   "domain": ["None"],
   "task": "question-answering",
-  "columns": [["question", "context"]]
+  "columns": [["question", "context"]],
+  "split" : ["validation"]
 }

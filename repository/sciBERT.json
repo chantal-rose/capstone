@@ -6,5 +6,6 @@
     "domain": ["science"],
     "dataset":["squad_v2","quac"],
     "columns":[["context","question"],["context","questions"]],
-    "task": "question-answering"
+    "task": "question-answering",
+    "split" : ["validation", "validation"]
   }

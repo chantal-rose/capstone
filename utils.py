@@ -107,9 +107,10 @@ def get_embeddings(text: str) -> np.ndarray:
 @lru_cache()
 def sample_rows_from_dataset(dataset: str,
                              column_tuples: tuple,
+                             *args,
                              num_samples: int = 100,
                              seed: int = 42,
-                             *args, **kwargs) -> pd.DataFrame:
+                             **kwargs) -> pd.DataFrame:
     """Returns a dataframe of randomly sampled examples from a given dataset.
 
     :param dataset: HuggingFace dataset to download
@@ -123,6 +124,9 @@ def sample_rows_from_dataset(dataset: str,
     :raises Exception
     """
     dataset_name = dataset
+    
+    print(args)
+    print(kwargs)
     
     if not isinstance(column_tuples, tuple):
         raise Exception("Column names need to a list of column names as strings.")
@@ -147,34 +151,39 @@ def get_string_to_encode(data: dict):
     :param data: dictionary object of the model's json file
     :return: string that is a concatenation of model description, sample questions, and sample contexts
     :raises Exception
-    """  
-    context_string = ""
-    question_string = ""
+    """ 
     
-    column_index = 0;
+    column_index = 0
+    shuffled_string = ""
     
     for dataset in data['dataset']:
-        try:
-            column_tuple = tuple(data['columns'][column_index])
-            if 'configs' in data:
-                if data['congfigs'][column_index]!="":
-                    config = data['congfigs'][column_index]
-            else:
-                config = None
-                
-            column_index = column_index + 1
-                        
-            if config is not None:
-                df = sample_rows_from_dataset(dataset, column_tuple, config, split='validation')
-            else:
-                df = sample_rows_from_dataset(dataset, column_tuple, split='validation')
-                
-            context_string = context_string + ' '.join(df['context'].tolist())
-            question_string = question_string + ' '.join(df['question'].tolist())        
-        except:
-            return ""
+        
+        column_tuple = tuple(data['columns'][column_index])
+        if 'configs' in data:
+            if data['configs'][column_index]!="":
+                config = data['configs'][column_index]
+        else:
+            config = None
+                    
+        if config is not None:
+            print("Configs found {0}".format(config))
+            df = sample_rows_from_dataset(dataset, column_tuple, config, split=data['split'][column_index])
+        else:
+            df = sample_rows_from_dataset(dataset, column_tuple, split=data['split'][column_index])
             
-    return data['description'] + context_string + question_string
+        for col in data['columns'][column_index]:
+            if isinstance(df[col], list):
+                shuffled_string = shuffled_string + ' '.join((df[col][0]).tolist())
+            print(col)
+            if dataset=="quac":
+                print(df[col])
+                print(type(df[col]))
+            shuffled_string = shuffled_string + ' '.join((df[col]).tolist())
+            
+        column_index = column_index + 1
+            
+            
+    return data['description'] + shuffled_string
     
 
 def create_map(force: bool = False, 
@@ -200,7 +209,8 @@ def create_map(force: bool = False,
         past_map = []
                     
     model_file_list = [filename for filename in os.listdir(repository_directory) if filename.endswith('.json') and filename
-                       in new_files]
+                       in new_files and filename!="longformer-large-4096-finetuned-triviaqa.json" 
+                       and filename != "unifiedqaT5.json"]
     
     
     for model_file in model_file_list:
@@ -289,4 +299,5 @@ SIMILARITY_METRIC_FUNCTION_MAP = {
 }
 
 if __name__ == "__main__":
-    create_map(False, "sciBERT.json")
+    get_map()
+    #create_map(False, "longformer-large-4096-finetuned-triviaqa.json")

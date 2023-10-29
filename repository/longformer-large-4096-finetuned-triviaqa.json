@@ -5,7 +5,8 @@
   "downloads": 15977,
   "domain": ["None"],
   "dataset":["trivia_qa"],
-  "configs": ["rc"],
+  "configs": ["rc.wikipedia"],
   "task": "question-answering",
-  "columns": [["question", "context"]]
+  "columns": [["question", "context"]],
+  "split" : ["validation"]
 }
