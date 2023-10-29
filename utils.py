@@ -123,9 +123,6 @@ def sample_rows_from_dataset(dataset: str,
     :raises Exception
     """
     
-    print(args)
-    print(kwargs)
-    
     if not isinstance(column_tuples, tuple):
         raise Exception("Column names need to a list of column names as strings.")
     try:
@@ -153,17 +150,27 @@ def get_string_to_encode(data: dict):
     
     column_index = 0;
     
-    try:
-        for dataset in data['dataset']:
+    for dataset in data['dataset']:
+        try:
             column_tuple = tuple(data['columns'][column_index])
+            if 'configs' in data:
+                if data['congfigs'][column_index]!="":
+                    config = data['congfigs'][column_index]
+            else:
+                config = None
+                
             column_index = column_index + 1
-            
-            df = sample_rows_from_dataset(dataset, column_tuple, split='validation')
+                        
+            if config is not None:
+                df = sample_rows_from_dataset(dataset, column_tuple, config, split='validation')
+            else:
+                df = sample_rows_from_dataset(dataset, column_tuple, split='validation')
+                
             context_string = context_string + ' '.join(df['context'].tolist())
             question_string = question_string + ' '.join(df['question'].tolist())
-            
-    except:
-        return ""
+        
+        except:
+            return ""
             
     return data['description'] + context_string + question_string
     
@@ -193,8 +200,6 @@ def create_map(force: bool = False,
     model_file_list = [filename for filename in os.listdir(repository_directory) if filename.endswith('.json') and filename
                        in new_files]
     
-    print(model_file_list)
-
     for model_file in model_file_list:
         with open(repository_directory + "/" + model_file) as model_json:
             data = json.load(model_json)
@@ -256,4 +261,4 @@ SIMILARITY_METRIC_FUNCTION_MAP = {
 }
 
 if __name__ == "__main__":
-    
+    create_map(False, "sciBERT.json")
