@@ -253,12 +253,15 @@ def filter_map(filter_field: str,
         #         filtered_models.append(model)
 
     sorted_filtered_models = sorted(filtered_models, key=lambda x: x['downloads'], reverse=True)
+    if len(sorted_filtered_models) < k:
+        return sorted_filtered_models
+
     return sorted_filtered_models[:k]
 
 def get_final_answer(answer_candidates: list, 
                      confidence_score_of_candidates: list):
     """Returns a single answer from a list of candidates based on a custom formula based on confidence scores and 
-    pairwise simialarity. 
+    pairwise similarity.
     
     :return: list of dictionaries where each entry is meta_data of each map
     """  
@@ -285,7 +288,19 @@ SIMILARITY_METRIC_FUNCTION_MAP = {
     "euclidean_distance": get_euclidean_distance,
 }
 
-if __name__ == "__main__":
-    create_map(False, "sciBERT.json")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

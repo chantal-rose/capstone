@@ -20,7 +20,7 @@ TASK = "question-answering"
 
 
 class ExtractiveQuestionAnsweringModel(HuggingFaceModel):
-    def __init__(self, model_name):
+    def __init__(self, model_name, tokenizer):
         HuggingFaceModel.__init__(self)
         self.model_name = model_name
         self.pipeline = pipeline(TASK, model=self.model_name)
@@ -35,11 +35,11 @@ Models: UnifiedQA BART and T5 and SCIfive  - basically any variant of T5,BART
 '''
 
 class Text2TextModel(HuggingFaceModel): 
-    def __init__(self,model_name,tokeinzer):
+    def __init__(self,model_name,tokenizer):
         HuggingFaceModel.__init__(self)
         self.model_name = model_name
         self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-        self.tokeinzer = AutoTokenizer.from_pretrained(tokeinzer)
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
     def predict(self, question, context, **kwargs):
             input = f"question: {question} context: {context}"
             encoded_input = self.tokenizer([input],
@@ -54,11 +54,11 @@ class Text2TextModel(HuggingFaceModel):
 
 
 class InstructModel(HuggingFaceModel): 
-    def __init__(self,model_name,tokeinzer):
+    def __init__(self,model_name,tokenizer):
         HuggingFaceModel.__init__(self)
         self.model_name = model_name
         self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-        self.tokeinzer = AutoTokenizer.from_pretrained(tokeinzer)
+        self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
     def predict(self, question, context, **kwargs):
             input = f"question: {question} context: {context}"
             inputs = self.tokenizer.encode(input, return_tensors="pt")

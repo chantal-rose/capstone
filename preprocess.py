@@ -13,4 +13,5 @@ class Ranker:
         embedding = get_embeddings(f"{question} {context}")
         best_models = nlargest(k, self.map,
                                key=lambda m: compute_similarity_between_embeddings(embedding, m['embeddings']))
-        return [model['model_name'] for model in best_models]
+        #return [model['model_name'] for model in best_models]
+        return best_models
