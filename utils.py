@@ -7,6 +7,7 @@ from datasets import load_dataset
 import json
 import os.path
 import pandas as pd
+import math
 import nltk
 import numpy as np
 from sentence_transformers import SentenceTransformer, util
@@ -15,7 +16,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 import torch
 
-nlp = spacy.load("en_core_web_lg")
+#nlp = spacy.load("en_core_web_lg")
 
 
 def get_cosine_similarity_score(answer1: str, answer2: str) -> float:
@@ -121,6 +122,7 @@ def sample_rows_from_dataset(dataset: str,
     :return: Pandas dataframe of randomly sampled examples
     :raises Exception
     """
+    
     if not isinstance(column_tuples, tuple):
         raise Exception("Column names need to a list of column names as strings.")
     try:
@@ -146,22 +148,29 @@ def get_string_to_encode(data: dict):
     context_string = ""
     question_string = ""
     
-    qa_tuple = ('question', 'context')
-    open_domain_tuple = ('question')
+    column_index = 0;
     
-    try:
-        for dataset in data['dataset']:
-            if data['task'].lower() == "qa":
-                df = sample_rows_from_dataset(dataset, qa_tuple, split='validation')
-                context_string = context_string + ' '.join(df['context'].tolist())
-                question_string = question_string + ' '.join(df['question'].tolist())
-            
-            elif data['type'].lower() == "open domain":
-                df = sample_rows_from_dataset(dataset, open_domain_tuple, split='validation')
-                context_string = context_string + ' '.join(df['context'].tolist())
-                question_string = question_string + ' '.join(df['question'].tolist())
-    except:
-        return ""
+    for dataset in data['dataset']:
+        try:
+            column_tuple = tuple(data['columns'][column_index])
+            if 'configs' in data:
+                if data['congfigs'][column_index]!="":
+                    config = data['congfigs'][column_index]
+            else:
+                config = None
+                
+            column_index = column_index + 1
+                        
+            if config is not None:
+                df = sample_rows_from_dataset(dataset, column_tuple, config, split='validation')
+            else:
+                df = sample_rows_from_dataset(dataset, column_tuple, split='validation')
+                
+            context_string = context_string + ' '.join(df['context'].tolist())
+            question_string = question_string + ' '.join(df['question'].tolist())
+        
+        except:
+            return ""
             
     return data['description'] + context_string + question_string
     
@@ -176,7 +185,7 @@ def create_map(force: bool = False,
     :return: persists the map to a file "model_map.json"
     """  
     
-    model_directory = os.path.dirname(__file__) + "/models"
+    repository_directory = os.path.dirname(__file__) + "/repository"
     
     try:
         with open(os.path.dirname(__file__) + '/model_map.json', "r") as f:
@@ -185,14 +194,14 @@ def create_map(force: bool = False,
         past_map = []
     
     if force is True:
-        new_files = os.listdir(model_directory)
+        new_files = os.listdir(repository_directory)
         past_map = []
             
-    model_file_list = [filename for filename in os.listdir(model_directory) if filename.endswith('.json') and filename
+    model_file_list = [filename for filename in os.listdir(repository_directory) if filename.endswith('.json') and filename
                        in new_files]
-
+    
     for model_file in model_file_list:
-        with open(model_directory + "/" + model_file) as model_json:
+        with open(repository_directory + "/" + model_file) as model_json:
             data = json.load(model_json)
             data['embeddings'] = get_embeddings(get_string_to_encode(data)).tolist()
             past_map.append(data)            
@@ -221,6 +230,30 @@ def get_map():
     return model_map
 
 
+def get_final_answer(answer_candidates: list, 
+                     confidence_score_of_candidates: list):
+    """Returns a single answer from a list of candidates based on a custom formula based on confidence scores and 
+    pairwise simialarity. 
+    
+    :return: list of dictionaries where each entry is meta_data of each map
+    """  
+    max_score_idx = 0;
+    max_formula_score = -math.inf
+    
+    for i in range(len(answer_candidates)):
+        curr_score = 0
+        for j in range(len(answer_candidates)):
+            if i != j:
+                curr_score += (confidence_score_of_candidates[j]*(get_answer_similarity_score(answer_candidates[i], answer_candidates[j])))
+        curr_score *= confidence_score_of_candidates[i]
+        
+        if curr_score > max_formula_score:
+            max_formula_score = curr_score
+            max_score_idx = i
+            
+    return answer_candidates[max_score_idx]
+
+
 SIMILARITY_METRIC_FUNCTION_MAP = {
     "jaccard_index": get_jaccard_index,
     "cosine_similarity": get_cosine_similarity_score,
@@ -228,4 +261,4 @@ SIMILARITY_METRIC_FUNCTION_MAP = {
 }
 
 if __name__ == "__main__":
-    get_map()
+    create_map(False, "sciBERT.json")
