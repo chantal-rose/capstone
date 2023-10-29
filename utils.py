@@ -122,12 +122,15 @@ def sample_rows_from_dataset(dataset: str,
     :return: Pandas dataframe of randomly sampled examples
     :raises Exception
     """
+    dataset_name = dataset
     
     if not isinstance(column_tuples, tuple):
         raise Exception("Column names need to a list of column names as strings.")
     try:
         dataset = load_dataset(dataset, *args, **kwargs)
+        print("Could load dataset for {0}".format(dataset_name))
     except Exception as e:
+        print("Could NOT load dataset for {0}".format(dataset_name))
         raise Exception("Error while loading dataset {}".format(e))
     shuffled_dataset = dataset.shuffle(seed=seed)
     df = pd.DataFrame(shuffled_dataset[:num_samples])
@@ -167,8 +170,7 @@ def get_string_to_encode(data: dict):
                 df = sample_rows_from_dataset(dataset, column_tuple, split='validation')
                 
             context_string = context_string + ' '.join(df['context'].tolist())
-            question_string = question_string + ' '.join(df['question'].tolist())
-        
+            question_string = question_string + ' '.join(df['question'].tolist())        
         except:
             return ""
             
@@ -196,9 +198,10 @@ def create_map(force: bool = False,
     if force is True:
         new_files = os.listdir(repository_directory)
         past_map = []
-            
+                    
     model_file_list = [filename for filename in os.listdir(repository_directory) if filename.endswith('.json') and filename
                        in new_files]
+    
     
     for model_file in model_file_list:
         with open(repository_directory + "/" + model_file) as model_json:
@@ -261,4 +264,5 @@ SIMILARITY_METRIC_FUNCTION_MAP = {
 }
 
 if __name__ == "__main__":
-    create_map(False, "sciBERT.json")
+    create_map(True, ["bloomz-560m.json"])
+    
