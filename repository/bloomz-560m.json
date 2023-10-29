@@ -5,6 +5,7 @@
   "downloads": 27352,
   "domain": ["None"],
   "dataset":["bigscience/xP3"],
+  "configs": ["en"],
   "task": "question-answering",
   "columns": [["inputs"]]
 }

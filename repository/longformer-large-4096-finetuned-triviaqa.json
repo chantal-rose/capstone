@@ -5,6 +5,7 @@
   "downloads": 15977,
   "domain": ["None"],
   "dataset":["trivia_qa"],
+  "configs": ["rc"],
   "task": "question-answering",
   "columns": [["question", "context"]]
 }
