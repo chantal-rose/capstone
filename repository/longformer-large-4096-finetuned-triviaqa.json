@@ -4,6 +4,7 @@
   "description": "This model is finetuned to answer questions where the context is quite long. It can answer trivia questions which are challenging reading comprehensive type of questions. This model does well on relatively complex, compositional questions and ones that require more cross sentence reasoning to find answers.",
   "downloads": 15977,
   "dataset":["trivia_qa"],
+  "configs": ["rc"],
   "task": "question-answering",
   "columns": [["question", "context"]]
 }
