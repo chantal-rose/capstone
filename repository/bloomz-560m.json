@@ -3,6 +3,7 @@
   "type": ["abstractive"],
   "description": "This is a model capable of following human instructions in dozens of languages zero-shot. It was produced by finetuning pretrained multilingual language models on cross-lingual task mixture (xP3) and the resulting models were found to be capable of cross-lingual generalization to unseen tasks and languages.",
   "downloads": 27352,
+  "domain": ["None"],
   "dataset":["bigscience/xP3"],
   "task": "question-answering",
   "columns": [["inputs"]]
