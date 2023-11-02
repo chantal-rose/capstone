@@ -10,7 +10,8 @@ model_classes = {
     }
 tokenizer = ''
 
-class Main():
+
+class Main:
     def __init__(self, parameters):
         self.model_classes = {
             'Text2TextModel': Text2TextModel,
@@ -46,9 +47,9 @@ class Main():
         # type based model search
         top_k_type_models = filter_map("type", self.type, self.k)
 
-        return [top_k_embedding_models,top_k_domain_models,top_k_type_models]
+        return [top_k_embedding_models, top_k_domain_models, top_k_type_models]
 
-    def get_model_outputs(self,top_models):
+    def get_model_outputs(self, top_models):
 
         answer_candidates = []
         confidence_score_of_candidates = []

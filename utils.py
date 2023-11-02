@@ -27,9 +27,16 @@ def get_cosine_similarity_score(answer1: str, answer2: str) -> float:
     :return: Cosine Similarity score
     """
     corpus = [answer1, answer2]
-    tfidf = TfidfVectorizer().fit_transform(corpus)
+    vectorizer = TfidfVectorizer()
+    sparse_matrix = vectorizer.fit_transform(corpus)
 
-    return cosine_similarity(tfidf[0:1], tfidf)[1]
+    doc_term_matrix = sparse_matrix.todense()
+    df = pd.DataFrame(
+        doc_term_matrix,
+        columns=vectorizer.get_feature_names_out(),
+        index=["answer1", "answer2"],
+    )
+    return cosine_similarity(df, df)[0, 1]
 
 
 def get_jaccard_index(answer1: str, answer2: str) -> float:
@@ -258,6 +265,7 @@ def filter_map(filter_field: str,
 
     return sorted_filtered_models[:k]
 
+
 def get_final_answer(answer_candidates: list, 
                      confidence_score_of_candidates: list):
     """Returns a single answer from a list of candidates based on a custom formula based on confidence scores and 
@@ -270,9 +278,9 @@ def get_final_answer(answer_candidates: list,
     
     for i in range(len(answer_candidates)):
         curr_score = 0
-        for j in range(len(answer_candidates)):
-            if i != j:
-                curr_score += (confidence_score_of_candidates[j]*(get_answer_similarity_score(answer_candidates[i], answer_candidates[j])))
+        for j in range(i+1, len(answer_candidates)):
+            curr_score += (confidence_score_of_candidates[j] * (get_answer_similarity_score(answer_candidates[i],
+                                                                                            answer_candidates[j])))
         curr_score *= confidence_score_of_candidates[i]
         
         if curr_score > max_formula_score:
