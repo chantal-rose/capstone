@@ -5,7 +5,8 @@
   "downloads": 5237,
   "domain": ["science"],
   "dataset":["pubmed_qa","zhengyun21/PMC-Patients"],
+  "configs": ["pqa_labeled", ""],
   "columns":[["context","question"],["title","patient"]],
   "task": "question-answering",
-  "split" : ["validation", "train"]
+  "split" : ["train", "train"]
 }

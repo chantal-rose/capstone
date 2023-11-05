@@ -125,9 +125,6 @@ def sample_rows_from_dataset(dataset: str,
     """
     dataset_name = dataset
     
-    print(args)
-    print(kwargs)
-    
     if not isinstance(column_tuples, tuple):
         raise Exception("Column names need to a list of column names as strings.")
     try:
@@ -158,33 +155,36 @@ def get_string_to_encode(data: dict):
     
     for dataset in data['dataset']:
         
-        column_tuple = tuple(data['columns'][column_index])
-        if 'configs' in data:
-            if data['configs'][column_index]!="":
-                config = data['configs'][column_index]
-        else:
-            config = None
-                    
-        if config is not None:
-            print("Configs found {0}".format(config))
-            df = sample_rows_from_dataset(dataset, column_tuple, config, split=data['split'][column_index])
-        else:
-            df = sample_rows_from_dataset(dataset, column_tuple, split=data['split'][column_index])
+        print(dataset)
+                
+        try:
+            column_tuple = tuple(data['columns'][column_index])
+            if 'configs' in data:
+                if data['configs'][column_index]!="":
+                    config = data['configs'][column_index]
+                else:
+                    config = None
+            else:
+                config = None
+                
             
-        for col in data['columns'][column_index]:
-            if isinstance(df[col], list):
-                shuffled_string = shuffled_string + ' '.join((df[col][0]).tolist())
-            print(col)
-            if dataset=="quac":
-                print(df[col])
-                print(type(df[col]))
-            shuffled_string = shuffled_string + ' '.join((df[col]).tolist())
+            if config is not None:
+                print("Configs found {0}".format(config))
+                df = sample_rows_from_dataset(dataset, column_tuple, config, split=data['split'][column_index])
+            else:
+                df = sample_rows_from_dataset(dataset, column_tuple, split=data['split'][column_index])
             
-        column_index = column_index + 1
+            for col in data['columns'][column_index]:
+                shuffled_string = shuffled_string + ' '.join(str((df[col]).tolist()))
+                
+            column_index = column_index + 1
             
-            
-    return data['description'] + shuffled_string
+        except:
+            print("Empty string for dataset {0}".format(dataset))
+        
     
+    return data['description'] + shuffled_string
+
 
 def create_map(force: bool = False, 
                new_files: list = []):
@@ -211,7 +211,6 @@ def create_map(force: bool = False,
     model_file_list = [filename for filename in os.listdir(repository_directory) if filename.endswith('.json') and filename
                        in new_files and filename!="longformer-large-4096-finetuned-triviaqa.json" 
                        and filename != "unifiedqaT5.json"]
-    
     
     for model_file in model_file_list:
         with open(repository_directory + "/" + model_file) as model_json:
@@ -299,5 +298,4 @@ SIMILARITY_METRIC_FUNCTION_MAP = {
 }
 
 if __name__ == "__main__":
-    get_map()
-    #create_map(False, "longformer-large-4096-finetuned-triviaqa.json")
+    create_map(False, "T5-base-for-BioQA.jsonn")
