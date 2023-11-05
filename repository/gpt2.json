@@ -1,5 +1,5 @@
 {
-    "model_name": "AlexWortega/taskGPT2-xl",
+    "model_name": "AlexWortega/taskGPT2-xl-v0.2a",
     "type": ["extractive","MCQ"],
     "description":"",
     "downloads": 39,
