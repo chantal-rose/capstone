@@ -1,0 +1,11 @@
+{
+    "model_name": "Rakib/roberta-base-on-cuad",
+    "type": ["extractive"],
+    "description":"",
+    "downloads": 339352,
+    "domain": ["legal"],
+    "dataset":["cuad"],
+    "columns":[["context","question"]],
+    "task": "question-answering",
+    "split" : ["train"]
+  }

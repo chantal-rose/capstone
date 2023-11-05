@@ -1,0 +1,11 @@
+{
+    "model_name": "Sarmila/pubmed-bert-squad-covidqa",
+    "type": ["extractive"],
+    "description":"",
+    "downloads": 10,
+    "domain": ["bio"],
+    "dataset":["covid_qa_deepset"],
+    "columns":[["context","question"]],
+    "task": "question-answering",
+    "split" : ["train"]
+  }
