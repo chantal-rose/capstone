@@ -302,4 +302,4 @@ SIMILARITY_METRIC_FUNCTION_MAP = {
 }
 
 if __name__ == "__main__":
-    create_map(False, "T5-base-for-BioQA.jsonn")
+    get_map()
