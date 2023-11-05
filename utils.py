@@ -15,7 +15,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 import torch
-
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 #nlp = spacy.load("en_core_web_lg")
 
 
@@ -181,9 +182,12 @@ def get_string_to_encode(data: dict):
             
         except:
             print("Empty string for dataset {0}".format(dataset))
-        
+        stop_words = set(stopwords.words('english'))
+        total_string = data['description'] + shuffled_string
+        word_tokens = word_tokenize(total_string)
+        filtered_sentence = [w for w in word_tokens if not w.lower() in stop_words]
     
-    return data['description'] + shuffled_string
+    return ' '.join(filtered_sentence)
 
 
 def create_map(force: bool = False, 
