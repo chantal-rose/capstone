@@ -15,7 +15,8 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 import torch
-
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 #nlp = spacy.load("en_core_web_lg")
 
 
@@ -114,9 +115,10 @@ def get_embeddings(text: str) -> np.ndarray:
 @lru_cache()
 def sample_rows_from_dataset(dataset: str,
                              column_tuples: tuple,
+                             *args,
                              num_samples: int = 100,
                              seed: int = 42,
-                             *args, **kwargs) -> pd.DataFrame:
+                             **kwargs) -> pd.DataFrame:
     """Returns a dataframe of randomly sampled examples from a given dataset.
 
     :param dataset: HuggingFace dataset to download
@@ -129,12 +131,15 @@ def sample_rows_from_dataset(dataset: str,
     :return: Pandas dataframe of randomly sampled examples
     :raises Exception
     """
-    
+    dataset_name = dataset
+
     if not isinstance(column_tuples, tuple):
         raise Exception("Column names need to a list of column names as strings.")
     try:
         dataset = load_dataset(dataset, *args, **kwargs)
+        print("Could load dataset for {0}".format(dataset_name))
     except Exception as e:
+        print("Could NOT load dataset for {0}".format(dataset_name))
         raise Exception("Error while loading dataset {}".format(e))
     shuffled_dataset = dataset.shuffle(seed=seed)
     df = pd.DataFrame(shuffled_dataset[:num_samples])
@@ -151,36 +156,46 @@ def get_string_to_encode(data: dict):
     :param data: dictionary object of the model's json file
     :return: string that is a concatenation of model description, sample questions, and sample contexts
     :raises Exception
-    """  
-    context_string = ""
-    question_string = ""
+    """
     
-    column_index = 0;
+    column_index = 0
+    shuffled_string = ""
     
     for dataset in data['dataset']:
+
+        print(dataset)
+
         try:
             column_tuple = tuple(data['columns'][column_index])
             if 'configs' in data:
-                if data['congfigs'][column_index]!="":
-                    config = data['congfigs'][column_index]
+                if data['configs'][column_index]!="":
+                    config = data['configs'][column_index]
+                else:
+                    config = None
             else:
                 config = None
                 
-            column_index = column_index + 1
-                        
+
             if config is not None:
-                df = sample_rows_from_dataset(dataset, column_tuple, config, split='validation')
+                print("Configs found {0}".format(config))
+                df = sample_rows_from_dataset(dataset, column_tuple, config, split=data['split'][column_index])
             else:
-                df = sample_rows_from_dataset(dataset, column_tuple, split='validation')
+                df = sample_rows_from_dataset(dataset, column_tuple, split=data['split'][column_index])
+
+            for col in data['columns'][column_index]:
+                shuffled_string = shuffled_string + ' '.join(str((df[col]).tolist()))
                 
-            context_string = context_string + ' '.join(df['context'].tolist())
-            question_string = question_string + ' '.join(df['question'].tolist())
-        
+            column_index = column_index + 1
+
         except:
-            return ""
-            
-    return data['description'] + context_string + question_string
-    
+            print("Empty string for dataset {0}".format(dataset))
+        stop_words = set(stopwords.words('english'))
+        total_string = data['description'] + shuffled_string
+        word_tokens = word_tokenize(total_string)
+        filtered_sentence = [w for w in word_tokens if not w.lower() in stop_words]
+
+    return ' '.join(filtered_sentence)
+
 
 def create_map(force: bool = False, 
                new_files: list = []):
@@ -203,9 +218,10 @@ def create_map(force: bool = False,
     if force is True:
         new_files = os.listdir(repository_directory)
         past_map = []
-            
+
     model_file_list = [filename for filename in os.listdir(repository_directory) if filename.endswith('.json') and filename
-                       in new_files]
+                       in new_files and filename!="longformer-large-4096-finetuned-triviaqa.json"
+                       and filename != "unifiedqaT5.json"]
     
     for model_file in model_file_list:
         with open(repository_directory + "/" + model_file) as model_json:
@@ -266,7 +282,7 @@ def filter_map(filter_field: str,
     return sorted_filtered_models[:k]
 
 
-def get_final_answer(answer_candidates: list, 
+def get_final_answer(answer_candidates: list,
                      confidence_score_of_candidates: list):
     """Returns a single answer from a list of candidates based on a custom formula based on confidence scores and 
     pairwise similarity.
@@ -296,19 +312,5 @@ SIMILARITY_METRIC_FUNCTION_MAP = {
     "euclidean_distance": get_euclidean_distance,
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+if __name__ == "__main__":
+    get_map()

@@ -3,8 +3,9 @@
   "type": ["abstractive"],
   "description": "Google's T5-base fine-tuned on BioASQ (secondary task) for Q&A downstream task.",
   "downloads": 172,
-  "dataset": ["squad"],
-  "columns": [["question", "context"]],
+  "dataset": ["squad", "BeIR/bioasq-generated-queries"],
+  "columns": [["question", "context"], ["text", "query"]],
   "domain": ["bio"],
-  "task": "question-answering"
+  "task": "question-answering",
+  "split" : ["validation", "train"]
 }

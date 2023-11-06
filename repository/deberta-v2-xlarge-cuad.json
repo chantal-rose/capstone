@@ -1,0 +1,11 @@
+{
+    "model_name": "akdeniz27/deberta-v2-xlarge-cuad",
+    "type": ["extractive"],
+    "description":"",
+    "downloads": 306,
+    "domain": ["legal"],
+    "dataset":["cuad"],
+    "columns":[["context","question"]],
+    "task": "question-answering",
+    "split" : ["train"]
+  }
