@@ -28,9 +28,16 @@ def get_cosine_similarity_score(answer1: str, answer2: str) -> float:
     :return: Cosine Similarity score
     """
     corpus = [answer1, answer2]
-    tfidf = TfidfVectorizer().fit_transform(corpus)
+    vectorizer = TfidfVectorizer()
+    sparse_matrix = vectorizer.fit_transform(corpus)
 
-    return cosine_similarity(tfidf[0:1], tfidf)[1]
+    doc_term_matrix = sparse_matrix.todense()
+    df = pd.DataFrame(
+        doc_term_matrix,
+        columns=vectorizer.get_feature_names_out(),
+        index=["answer1", "answer2"],
+    )
+    return cosine_similarity(df, df)[0, 1]
 
 
 def get_jaccard_index(answer1: str, answer2: str) -> float:
@@ -125,7 +132,7 @@ def sample_rows_from_dataset(dataset: str,
     :raises Exception
     """
     dataset_name = dataset
-    
+
     if not isinstance(column_tuples, tuple):
         raise Exception("Column names need to a list of column names as strings.")
     try:
@@ -149,15 +156,15 @@ def get_string_to_encode(data: dict):
     :param data: dictionary object of the model's json file
     :return: string that is a concatenation of model description, sample questions, and sample contexts
     :raises Exception
-    """ 
+    """
     
     column_index = 0
     shuffled_string = ""
     
     for dataset in data['dataset']:
-        
+
         print(dataset)
-                
+
         try:
             column_tuple = tuple(data['columns'][column_index])
             if 'configs' in data:
@@ -168,25 +175,25 @@ def get_string_to_encode(data: dict):
             else:
                 config = None
                 
-            
+
             if config is not None:
                 print("Configs found {0}".format(config))
                 df = sample_rows_from_dataset(dataset, column_tuple, config, split=data['split'][column_index])
             else:
                 df = sample_rows_from_dataset(dataset, column_tuple, split=data['split'][column_index])
-            
+
             for col in data['columns'][column_index]:
                 shuffled_string = shuffled_string + ' '.join(str((df[col]).tolist()))
                 
             column_index = column_index + 1
-            
+
         except:
             print("Empty string for dataset {0}".format(dataset))
         stop_words = set(stopwords.words('english'))
         total_string = data['description'] + shuffled_string
         word_tokens = word_tokenize(total_string)
         filtered_sentence = [w for w in word_tokens if not w.lower() in stop_words]
-    
+
     return ' '.join(filtered_sentence)
 
 
@@ -211,9 +218,9 @@ def create_map(force: bool = False,
     if force is True:
         new_files = os.listdir(repository_directory)
         past_map = []
-                    
+
     model_file_list = [filename for filename in os.listdir(repository_directory) if filename.endswith('.json') and filename
-                       in new_files and filename!="longformer-large-4096-finetuned-triviaqa.json" 
+                       in new_files and filename!="longformer-large-4096-finetuned-triviaqa.json"
                        and filename != "unifiedqaT5.json"]
     
     for model_file in model_file_list:
@@ -269,12 +276,16 @@ def filter_map(filter_field: str,
         #         filtered_models.append(model)
 
     sorted_filtered_models = sorted(filtered_models, key=lambda x: x['downloads'], reverse=True)
+    if len(sorted_filtered_models) < k:
+        return sorted_filtered_models
+
     return sorted_filtered_models[:k]
 
-def get_final_answer(answer_candidates: list, 
+
+def get_final_answer(answer_candidates: list,
                      confidence_score_of_candidates: list):
     """Returns a single answer from a list of candidates based on a custom formula based on confidence scores and 
-    pairwise simialarity. 
+    pairwise similarity.
     
     :return: list of dictionaries where each entry is meta_data of each map
     """  
@@ -283,9 +294,9 @@ def get_final_answer(answer_candidates: list,
     
     for i in range(len(answer_candidates)):
         curr_score = 0
-        for j in range(len(answer_candidates)):
-            if i != j:
-                curr_score += (confidence_score_of_candidates[j]*(get_answer_similarity_score(answer_candidates[i], answer_candidates[j])))
+        for j in range(i+1, len(answer_candidates)):
+            curr_score += (confidence_score_of_candidates[j] * (get_answer_similarity_score(answer_candidates[i],
+                                                                                            answer_candidates[j])))
         curr_score *= confidence_score_of_candidates[i]
         
         if curr_score > max_formula_score:
