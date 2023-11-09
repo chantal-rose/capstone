@@ -1,5 +1,6 @@
 """Module that contains all helper functions for the system.
 """
+from time import sleep
 from functools import lru_cache
 from heapq import nlargest
 import json
@@ -189,11 +190,11 @@ def get_string_to_encode(data: dict) -> str:
 
         df = df.apply(get_string_from_row, args=(column_tuple,), axis=1)
         shuffled_string += df.str.cat(sep=" ")
-
+        shuffled_string = shuffled_string.replace("\n", "")
+    
     total_string = data["description"] + shuffled_string
     word_tokens = word_tokenize(total_string)
     filtered_tokens = [w for w in word_tokens if not w.lower() in stopwords and not w.lower() in punctuations]
-
     return " ".join(filtered_tokens)
 
 
