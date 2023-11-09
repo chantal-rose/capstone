@@ -2,7 +2,7 @@
     "model_name": "ixa-ehu/SciBERT-SQuAD-QuAC",
     "type": ["extractive"],
     "description":"This is the SciBERT language representation model fine tuned for Question Answering. SciBERT is a pre-trained language model based on BERT that has been trained on a large corpus of scientific text.",
-    "downloads": 1638,
+    "downloads": 3238,
     "domain": ["science"],
     "dataset":["squad_v2","quac"],
     "columns":[["context","question"],["context","questions"]],

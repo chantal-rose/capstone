@@ -1,126 +1,76 @@
-from preprocess import Ranker
-from models.question_answering_models import ExtractiveQuestionAnsweringModel, Text2TextModel, InstructModel
-from utils import filter_map, get_final_answer, create_map
 import sys
 
-model_classes = {
-        'Text2TextModel': Text2TextModel,
-        'InstructModel':InstructModel,
-        'ExtractiveQuestionAnsweringModel':ExtractiveQuestionAnsweringModel
-    }
-tokenizer = ''
+# from flask import Flask, request
+from gpt_utils import GPT4InputParser
+from model_pipelines import get_answer_from_model
+from model_pipelines import load_models
+from model_pipelines import load_pipeline
+from utils import filter_map
+from utils import get_final_answer
+from utils import get_top_k_models
 
 
-class Main:
-    def __init__(self, parameters):
-        self.model_classes = {
-            'Text2TextModel': Text2TextModel,
-            'InstructModel': InstructModel,
-            'ExtractiveQuestionAnsweringModel': ExtractiveQuestionAnsweringModel
-        }
-        self.tokenizer = ''
+# app = Flask(__name__)
+DOMAIN = "domain"
+TYPE = "type"
+K = 3
 
-        self.query = parameters[0]
-        self.context = parameters[1]
-        self.k = parameters[2]
-        self.domain = None
-        self.type = None
-        if len(parameters) > 3:
-            self.domain = parameters[3]
-            self.type = parameters[4]
-        self.output = ''
 
-    def parse_input(self):
-        if not self.domain:
-            self.domain = ' '  # call gpt4
-        if not self.type:
-            self.type = ' '  # call gpt4
+def send_input_to_system(models: dict, user_input: str) -> None:
+    """Passes the user input to the system.
 
-    def get_top_models(self):
-        # embedding based model search
-        ranker = Ranker()
-        top_k_embedding_models = ranker.get_top_k_models(self.query, self.context, self.k)
+    This function implements the entire pipeline.
+    NOTE: Consider moving the part after GPT4 parsing to a separate function for retries and feedback loop.
 
-        # domain based model search
-        top_k_domain_models = filter_map("domain", self.domain, self.k)
+    :param models: Dictionary mapping models to their tokenizers and model classes
+    :param user_input: Raw user query
+    :return:
+    """
+    parser = GPT4InputParser()
+    parser.parse(user_input)
 
-        # type based model search
-        top_k_type_models = filter_map("type", self.type, self.k)
+    type = parser.type
+    domain = parser.domain
+    question = parser.question
+    context = parser.context
 
-        return [top_k_embedding_models, top_k_domain_models, top_k_type_models]
+    top_k_embedding_models = get_top_k_models(question, context, K)
+    top_k_domain_models = filter_map(DOMAIN, domain, K)
+    top_k_type_models = filter_map(TYPE, type, K)
 
-    def get_model_outputs(self, top_models):
+    answers = []
+    answer_scores = []
 
-        answer_candidates = []
-        confidence_score_of_candidates = []
+    for model in top_k_embedding_models + top_k_domain_models + top_k_type_models:
+        pipeline = load_pipeline(models, model)
+        answer, confidence_score = get_answer_from_model(pipeline, models, model, question, context)
+        answers.append(answer)
+        answer_scores.append(confidence_score)
 
-        for pipeline in top_models:
-            for model in pipeline:
-                task = model['task']
-                inference_class = model_classes[model['inference_class']](model['model_name'], tokenizer)
+    temp_scores = [score for score in answer_scores if score is not None]
+    average_score = sum(temp_scores) / len(temp_scores)
+    answer_scores = [score if score is not None else average_score for score in answer_scores]
 
-                output = inference_class.predict(self.query, self.context)
-                answer_candidates.append(output['answer'])
-                confidence_score_of_candidates.append(output['score'])
-        return answer_candidates, confidence_score_of_candidates
+    final_answer = get_final_answer(answers, answer_scores)
+    print("All returned answers\n")
+    print(answers)
+    print("Final answer\n")
+    print(final_answer)
 
-    def run(self):
-        # create map
-        create_map(True, [])
+    # implement feedback loop with retries and query reformulation
+    # implement answer verification
 
-        self.parse_input()
-        top_models = self.get_top_models()
 
-        top_answer_candidates, top_answer_candidates_confidence_scores = self.get_model_outputs(top_models)
-
-        gen_qa_output = get_final_answer(top_answer_candidates, top_answer_candidates_confidence_scores)
-
-        self.output = gen_qa_output
-
-    def verify(self):
-
-        if self.output == '': #if no answer was generate
-            return False
-
-        # reformulate for boolqa
-        # verify_query = verify_reformulation(overall_output, query, context)
-
-        # pass through boolqa
-        pass
-
+# @app.route("/ask", methods=['POST'])
+# def ask_system():
+#     request_data = request.get_json()
+#
+#     user_query = request_data["query"]
+#     return send_input_to_system(model_map, user_query)
 
 
 if __name__ == "__main__":
-
-    gen_qa = Main(sys.argv)
-
-    run_complete = False
-
-    attempts = 0
-    while not run_complete:
-        attempts += 1
-        gen_qa.run()
-        output_verified = gen_qa.verify()
-
-        if output_verified:
-            run_complete = True
-        elif attempts > 5:
-            break
-        else:
-            continue
-            #reformulate query
-            #reset params
-
-    if run_complete and len(gen_qa.output) > 0:
-        print(gen_qa.output)
-    else:
-        print('Sorry the system could not find a response!')
-
-
-
-
-
-
-
-
-
+    model_map = load_models()
+    query = sys.argv[1]
+    send_input_to_system(model_map, query)
+    # app.run(port="8082", threaded=True, host=("0.0.0.0"))

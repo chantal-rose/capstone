@@ -2,10 +2,10 @@
     "model_name": "AlexWortega/taskGPT2-xl-v0.2a",
     "type": ["extractive","MCQ"],
     "description":"",
-    "downloads": 39,
+    "downloads": 83,
     "domain": ["math"],
-    "dataset":["math_qa"],
-    "columns":[["Problem","Rationale"]],
+    "dataset":["math_qa", "gsm8k"],
+    "columns":[["Problem","Rationale"], ["question"]],
     "task": "question-answering",
-    "split" : ["validation"]
+    "split" : ["validation", "train"]
   }

@@ -1,23 +1,29 @@
 """Module that contains all helper functions for the system.
 """
-from math import exp, pow, sqrt
 from functools import lru_cache
+from heapq import nlargest
+import json
+from math import exp, pow, sqrt
+import string
+import os
 
 from datasets import load_dataset
-import json
-import os.path
 import pandas as pd
 import math
 import nltk
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
 import numpy as np
 from sentence_transformers import SentenceTransformer, util
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 import torch
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-#nlp = spacy.load("en_core_web_lg")
+
+
+nlp = spacy.load("en_core_web_lg")
+stopwords = set(stopwords.words('english'))
+punctuations = set(string.punctuation)
 
 
 def get_cosine_similarity_score(answer1: str, answer2: str) -> float:
@@ -114,7 +120,7 @@ def get_embeddings(text: str) -> np.ndarray:
 
 @lru_cache()
 def sample_rows_from_dataset(dataset: str,
-                             column_tuples: tuple,
+                             column_names: tuple,
                              *args,
                              num_samples: int = 100,
                              seed: int = 42,
@@ -122,7 +128,7 @@ def sample_rows_from_dataset(dataset: str,
     """Returns a dataframe of randomly sampled examples from a given dataset.
 
     :param dataset: HuggingFace dataset to download
-    :param column_tuples: Columns to return (in most cases, it will be ['question', 'context'], but for open-domain,
+    :param column_names: Columns to return (in most cases, it will be ['question', 'context'], but for open-domain,
         it will be ['question']
     :param num_samples: Number of rows to sample
     :param seed: Seed to use while shuffling dataset for reproducibility
@@ -131,20 +137,17 @@ def sample_rows_from_dataset(dataset: str,
     :return: Pandas dataframe of randomly sampled examples
     :raises Exception
     """
-    dataset_name = dataset
-
-    if not isinstance(column_tuples, tuple):
-        raise Exception("Column names need to a list of column names as strings.")
+    if not isinstance(column_names, tuple):
+        raise Exception("Column names need to be a list of column names as strings.")
     try:
         dataset = load_dataset(dataset, *args, **kwargs)
-        print("Could load dataset for {0}".format(dataset_name))
     except Exception as e:
-        print("Could NOT load dataset for {0}".format(dataset_name))
+        print("Could NOT load dataset for {0}".format(dataset))
         raise Exception("Error while loading dataset {}".format(e))
     shuffled_dataset = dataset.shuffle(seed=seed)
     df = pd.DataFrame(shuffled_dataset[:num_samples])
     try:
-        return df[list(column_tuples)]
+        return df[list(column_names)]
     except KeyError as e:
         raise e
 
@@ -157,70 +160,53 @@ def get_string_to_encode(data: dict):
     :return: string that is a concatenation of model description, sample questions, and sample contexts
     :raises Exception
     """
-    
-    column_index = 0
     shuffled_string = ""
-    
-    for dataset in data['dataset']:
+    for ind, dataset in enumerate(data["dataset"]):
+        column_tuple = tuple(data["columns"][ind])
+        config = None
+        if "configs" in data:
+            if data["configs"][ind] != "":
+                config = data["configs"][ind]
 
-        print(dataset)
+        if config is not None:
+            df = sample_rows_from_dataset(dataset, column_tuple, config, split=data['split'][ind])
+        else:
+            df = sample_rows_from_dataset(dataset, column_tuple, split=data['split'][ind])
 
-        try:
-            column_tuple = tuple(data['columns'][column_index])
-            if 'configs' in data:
-                if data['configs'][column_index]!="":
-                    config = data['configs'][column_index]
-                else:
-                    config = None
-            else:
-                config = None
-                
+        for col in data["columns"][ind]:
+            shuffled_string = shuffled_string + "".join(str((df[col]).tolist()))
+            print(shuffled_string)
 
-            if config is not None:
-                print("Configs found {0}".format(config))
-                df = sample_rows_from_dataset(dataset, column_tuple, config, split=data['split'][column_index])
-            else:
-                df = sample_rows_from_dataset(dataset, column_tuple, split=data['split'][column_index])
+    total_string = data["description"] + shuffled_string
+    word_tokens = word_tokenize(total_string)
+    filtered_tokens = [w for w in word_tokens if not w.lower() in stopwords and not w.lower() in punctuations]
 
-            for col in data['columns'][column_index]:
-                shuffled_string = shuffled_string + ' '.join(str((df[col]).tolist()))
-                
-            column_index = column_index + 1
-
-        except:
-            print("Empty string for dataset {0}".format(dataset))
-        stop_words = set(stopwords.words('english'))
-        total_string = data['description'] + shuffled_string
-        word_tokens = word_tokenize(total_string)
-        filtered_sentence = [w for w in word_tokens if not w.lower() in stop_words]
-
-    return ' '.join(filtered_sentence)
+    return " ".join(filtered_tokens)
 
 
-def create_map(force: bool = False, 
-               new_files: list = []):
+def create_map(filenames=None, force_recreate=False):
     """Creates a list of dictionary objects from the model's .json files. in addition to metadata from the .json file,
     it also populates the embedding of the model. 
 
-    :param force: control flag to rerun the create map code for all .json files
-    :param new_files: list of files for which the create map function should run of force flag is false
-    :return: persists the map to a file "model_map.json"
-    """  
-    
+    :return: Map of models as well as persists the map to a file "model_map.json"
+    """
     repository_directory = os.path.dirname(__file__) + "/repository"
-    
-    try:
-        with open(os.path.dirname(__file__) + '/model_map.json', "r") as f:
-            past_map = json.load(f)
-    except:
-        past_map = []
-    
-    if force is True:
-        new_files = os.listdir(repository_directory)
-        past_map = []
+    past_map = []
 
-    model_file_list = [filename for filename in os.listdir(repository_directory) if filename.endswith('.json') and filename
-                       in new_files and filename!="longformer-large-4096-finetuned-triviaqa.json"
+    if "model_map.json" in os.listdir(os.path.dirname(__file__)):
+        with open(os.path.dirname(__file__) + "/model_map.json", "r") as f:
+            if not filenames:
+                if not force_recreate:
+                    return json.load(f)
+                else:
+                    filenames = os.listdir(repository_directory)
+            elif filenames and not force_recreate:
+                past_map = json.load(f)
+
+    if not filenames or (filenames and force_recreate):
+        filenames = os.listdir(repository_directory)
+
+    model_file_list = [filename for filename in filenames if filename.endswith(".json")
                        and filename != "unifiedqaT5.json"]
     
     for model_file in model_file_list:
@@ -233,47 +219,40 @@ def create_map(force: bool = False,
         
     with open(os.path.dirname(__file__) + "/model_map.json", "w+") as f:
         f.write(model_map_list)
-    
 
-def get_map():
-    """Gets a list of dictionaries of the current persisted state of the model map
-    
-    :return: list of dictionaries where each entry is meta_data of each map
-    """  
-    
-    if "model_map.json" not in os.listdir(os.path.dirname(__file__)):
-        create_map(force=True)
-    
-    try:
-        with open(os.path.dirname(__file__) + '/model_map.json', "r") as f:
-            model_map = json.load(f)
-    except:
-        model_map = []
-            
-    return model_map
+    return model_map_list
+
+
+def get_top_k_models(question: str, context: str, k: int = 2) -> list[str]:
+    model_map = json.loads(create_map())
+    embedding = get_embeddings(f"{question} {context}")
+
+    for model in model_map:
+        model["similarity"] = compute_similarity_between_embeddings(embedding, model["embeddings"])
+
+    def sort_key(x):
+        return x["similarity"]
+
+    best_models = nlargest(k, model_map, key=sort_key)
+    return [model for model in best_models]
 
 
 def filter_map(filter_field: str,
                field_val: str,
                k: int):
     """Returns a filtered map of top k models based on field (type/domain)
+
     :param filter_field: filter based on "type" or "domain"
     :param field_val: value to be filtered on
     :param k: top number of models to be returned
     :return: list of model dictionaries
     :raises Exception
     """
-    model_map = get_map()  # getmap
+    model_map = json.loads(create_map())
     filtered_models = []
     for model in model_map:
         if field_val in model[filter_field]:
             filtered_models.append(model)
-        # if filter_field == "type":
-        #     if field_val in model['type']:
-        #         filtered_models.append(model)
-        # else:
-        #     if field_val in model[filter_field]:
-        #         filtered_models.append(model)
 
     sorted_filtered_models = sorted(filtered_models, key=lambda x: x['downloads'], reverse=True)
     if len(sorted_filtered_models) < k:
@@ -313,4 +292,4 @@ SIMILARITY_METRIC_FUNCTION_MAP = {
 }
 
 if __name__ == "__main__":
-    get_map()
+    create_map()
