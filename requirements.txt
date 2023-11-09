@@ -1,4 +1,5 @@
 datasets==2.14.5
+en-core-web-lg==3.7.0
 nltk==3.8.1
 numpy==1.26.0
 openai==1.1.1

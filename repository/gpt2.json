@@ -4,6 +4,7 @@
     "description":"",
     "downloads": 83,
     "domain": ["math"],
+    "configs": ["", "main"],
     "dataset":["math_qa", "gsm8k"],
     "columns":[["Problem","Rationale"], ["question"]],
     "task": "question-answering",

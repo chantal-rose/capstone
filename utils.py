@@ -152,11 +152,25 @@ def sample_rows_from_dataset(dataset: str,
         raise e
 
 
-def get_string_to_encode(data: dict):
+def get_string_from_row(row: pd.Series, column_tuple: tuple) -> str:
+    """Returns a string made from the column names and column values of each row
+
+    :param row: Row from a dataframe
+    :param column_tuple: Tuple of column names
+    :return: Combined string
+    """
+    s = ""
+    for i, col in enumerate(column_tuple):
+        s += f"{col}: {str(row.iloc[i])} "
+
+    return s
+
+
+def get_string_to_encode(data: dict) -> str:
     """Returns a string which is a concatenation of model description, sample questions, and sample contexts from
     the dataset the model was trained on.
 
-    :param data: dictionary object of the model's json file
+    :param data: Dictionary object of the model's json file
     :return: string that is a concatenation of model description, sample questions, and sample contexts
     :raises Exception
     """
@@ -173,9 +187,8 @@ def get_string_to_encode(data: dict):
         else:
             df = sample_rows_from_dataset(dataset, column_tuple, split=data['split'][ind])
 
-        for col in data["columns"][ind]:
-            shuffled_string = shuffled_string + "".join(str((df[col]).tolist()))
-            print(shuffled_string)
+        df = df.apply(get_string_from_row, args=(column_tuple,), axis=1)
+        shuffled_string += df.str.cat(sep=" ")
 
     total_string = data["description"] + shuffled_string
     word_tokens = word_tokenize(total_string)
@@ -184,11 +197,14 @@ def get_string_to_encode(data: dict):
     return " ".join(filtered_tokens)
 
 
-def create_map(filenames=None, force_recreate=False):
-    """Creates a list of dictionary objects from the model's .json files. in addition to metadata from the .json file,
-    it also populates the embedding of the model. 
+def create_map(filenames: list = None, force_recreate: bool = False) -> str:
+    """Creates a list of dictionary objects from the model's .json files.
 
-    :return: Map of models as well as persists the map to a file "model_map.json"
+    In addition to metadata from the .json file, it also populates the embedding of the model.
+
+    :param filenames: List of filenames provided if you want to limit the models for which you create a map
+    :param force_recreate: True/False if you want to recreate the map if exists
+    :return: JSON string of map of models as well as persists the map to a file "model_map.json"
     """
     repository_directory = os.path.dirname(__file__) + "/repository"
     past_map = []
@@ -223,9 +239,16 @@ def create_map(filenames=None, force_recreate=False):
     return model_map_list
 
 
-def get_top_k_models(question: str, context: str, k: int = 2) -> list[str]:
+def get_top_k_models(question: str, context: str, k: int = 2) -> list:
+    """Gets top k models based on similarity of embeddings to the embedding of the question+context
+
+    :param question: Question from user
+    :param context: Context from user
+    :param k: Number of models required
+    :return List of models
+    """
     model_map = json.loads(create_map())
-    embedding = get_embeddings(f"{question} {context}")
+    embedding = get_embeddings(f"question: {question} context: {context}")
 
     for model in model_map:
         model["similarity"] = compute_similarity_between_embeddings(embedding, model["embeddings"])
@@ -265,7 +288,9 @@ def get_final_answer(answer_candidates: list,
                      confidence_score_of_candidates: list):
     """Returns a single answer from a list of candidates based on a custom formula based on confidence scores and 
     pairwise similarity.
-    
+
+    :param answer_candidates: List of answers from different models
+    :param confidence_score_of_candidates: List of scores returned by the models
     :return: list of dictionaries where each entry is meta_data of each map
     """  
     max_score_idx = 0
