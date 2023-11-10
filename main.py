@@ -1,5 +1,8 @@
 from preprocess import Ranker
+from llm import query_llm
+import prompts
 from models.question_answering_models import ExtractiveQuestionAnsweringModel, Text2TextModel, InstructModel
+from models.answer_verification import PrimeQAAnswerVerificationModel
 from utils import filter_map, get_final_answer, create_map
 import sys
 
@@ -29,6 +32,8 @@ class Main:
             self.domain = parameters[3]
             self.type = parameters[4]
         self.output = ''
+        
+        self.verifier = PrimeQAAnswerVerificationModel()
 
     def parse_input(self):
         if not self.domain:
@@ -77,16 +82,20 @@ class Main:
 
         self.output = gen_qa_output
 
-    def verify(self):
+    def verify(self) -> bool:
 
         if self.output == '': #if no answer was generate
             return False
 
         # reformulate for boolqa
+        reformulated = query_llm(messages=[
+            {"role": "system", "content": prompts.REFORMULATE_QUERY},
+            {"role": "user", "content": f"question: {self.query}\nanswer: {self.output}"}
+        ])
         # verify_query = verify_reformulation(overall_output, query, context)
 
         # pass through boolqa
-        pass
+        return self.verifier(reformulated, self.context)
 
 
 
