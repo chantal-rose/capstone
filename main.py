@@ -33,11 +33,12 @@ def send_input_to_system(models: dict, user_input: str) -> None:
     # domain = parser.domain
     # question = parser.question
     # context = parser.context
-    type = "bio"
-    domain = "extractive"
-    question = "Is methylation of the FGFR2 gene associated with high birth weight centile in humans?"
-    context = ("This study examined links between DNA methylation and birth weight centile (BWC), and explored the"
-               " impact of genetic variation.")
+    type = "extractive"
+    domain = "bio"
+    question = "Can 'high-risk' human papillomaviruses (HPVs) be detected in human breast milk?"
+    context = ("Using polymerase chain reaction techniques, we evaluated the presence of HPV infection in human"
+               " breast milk collected from 21 HPV-positive and 11 HPV-negative mothers. Of the 32 studied human"
+               " milk specimens, no 'high-risk' HPV 16, 18, 31, 33, 35, 39, 45, 51, 52, 56, 58 or 58 DNA was detected.")
 
     top_k_embedding_models = get_top_k_models(question, context, K)
     top_k_domain_models = filter_map(DOMAIN, domain, K)
@@ -46,23 +47,26 @@ def send_input_to_system(models: dict, user_input: str) -> None:
     answers = []
     answer_scores = []
 
-    for model in top_k_embedding_models + top_k_domain_models + top_k_type_models:
+    all_models = top_k_embedding_models + top_k_domain_models + top_k_type_models
+
+    for model in all_models:
         pipeline = load_pipeline(models, model)
         answer, confidence_score = get_answer_from_model(pipeline, models, model, question, context)
-        answers.append(answer)
-        answer_scores.append(confidence_score)
+        if answer:
+            answers.append(answer)
+            answer_scores.append(confidence_score)
 
     temp_scores = [score for score in answer_scores if score is not None]
     average_score = sum(temp_scores) / len(temp_scores)
     answer_scores = [score if score is not None else average_score for score in answer_scores]
 
     final_answer = get_final_answer(answers, answer_scores)
-    print("Models picked\n")
-    all_models = [model["model_name"] for model in top_k_embedding_models + top_k_domain_models + top_k_type_models]
+    print("Models picked:\n")
+    all_models = [model["model_name"] for model in all_models]
     print(all_models)
-    print("All returned answers\n")
+    print("All returned answers:\n")
     print(answers)
-    print("Final answer\n")
+    print("Final answer:\n")
     print(final_answer)
 
     # TODO: implement feedback loop with retries and query reformulation

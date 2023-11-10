@@ -28,7 +28,7 @@ class TestMain(unittest.TestCase):
                    " disease characteristics has yet to be investigated.")
         parser = mock.MagicMock(type="bio", domain="extractive", question=question, context=context)
         mock_parser.return_value.parse.return_value = parser
-        models = [{"model": "model_name"}]
+        models = [{"model_name": "model_name"}]
         mock_get_top_k_models.return_value = models
         mock_filter_map.side_effect = [models, models]
         mock_get_answer_from_model.side_effect = [("answer1", 0.4),

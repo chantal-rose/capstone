@@ -152,15 +152,15 @@ def sample_rows_from_dataset(dataset: str,
         raise e
 
 
-def get_string_from_row(row: pd.Series, column_tuple: tuple) -> str:
+def get_string_from_row(row: pd.Series, columns: list) -> str:
     """Returns a string made from the column names and column values of each row
 
     :param row: Row from a dataframe
-    :param column_tuple: Tuple of column names
+    :param columns: Tuple of column names
     :return: Combined string
     """
     s = ""
-    for i, col in enumerate(column_tuple):
+    for i, col in enumerate(columns):
         s += f"{col}: {str(row.iloc[i])} "
 
     return s
@@ -176,6 +176,7 @@ def get_string_to_encode(data: dict) -> str:
     """
     shuffled_string = ""
     for ind, dataset in enumerate(data["dataset"]):
+        print(dataset)
         column_tuple = tuple(data["columns"][ind])
         config = None
         if "configs" in data:
@@ -187,7 +188,7 @@ def get_string_to_encode(data: dict) -> str:
         else:
             df = sample_rows_from_dataset(dataset, column_tuple, split=data['split'][ind])
 
-        df = df.apply(get_string_from_row, args=(column_tuple,), axis=1)
+        df = df.apply(get_string_from_row, args=(df.columns,), axis=1)
         shuffled_string += df.str.cat(sep=" ")
         shuffled_string = shuffled_string.replace("\n", "")
     
@@ -274,10 +275,11 @@ def filter_map(filter_field: str,
     model_map = create_map()
     filtered_models = []
     for model in model_map:
+
         if field_val in model[filter_field]:
             filtered_models.append(model)
 
-    sorted_filtered_models = sorted(filtered_models, key=lambda x: x['downloads'], reverse=True)
+    sorted_filtered_models = sorted(filtered_models, key=lambda x: x["downloads"], reverse=True)
     if len(sorted_filtered_models) < k:
         return sorted_filtered_models
 

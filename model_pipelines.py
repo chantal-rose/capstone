@@ -75,7 +75,7 @@ def load_models():  # pragma: no cover
         "razent/SciFive-base-Pubmed_PMC": {
             TOKENIZER: AutoTokenizer.from_pretrained("razent/SciFive-base-Pubmed_PMC"),
             MODEL: AutoModelForSeq2SeqLM.from_pretrained("razent/SciFive-base-Pubmed_PMC"),
-            TASK: TEXT_CLASSIFICATION
+            TASK: TEXT_GENERATION
         },
         "MaRiOrOsSi/t5-base-finetuned-question-answering": {
             TOKENIZER: AutoTokenizer.from_pretrained("MaRiOrOsSi/t5-base-finetuned-question-answering"),
@@ -85,7 +85,7 @@ def load_models():  # pragma: no cover
         "ozcangundes/T5-base-for-BioQA": {
             TOKENIZER: AutoTokenizer.from_pretrained("ozcangundes/T5-base-for-BioQA"),
             MODEL: AutoModelForSeq2SeqLM.from_pretrained("ozcangundes/T5-base-for-BioQA"),
-            TASK: QUESTION_ANSWERING
+            TASK: TEXT_GENERATION
         }
     }
     return models
@@ -126,10 +126,14 @@ def get_answer_from_model(pipe: pipeline,
         output = pipe(question=question, context=context)
         return output["answer"], output["score"]
     elif task == TEXT_GENERATION or task == TEXT2TEXT_GENERTAION:
-        text = "question: {} context: {}".format(question, context)
+        text = "question: {} context: {} answer: ".format(question, context)
         pattern = re.compile(r".*answer: (.+)")
-        output = pipe(text, max_length=50, num_return_sequences=1, do_sample=True)
-        return pattern.match(output[0]["generated_text"]).groups()[0], None
+        output = pipe(text, max_length=100, num_return_sequences=1, do_sample=True)
+        # TODO: Get confidence scores from text-generation models
+        try:
+            return pattern.match(output[0]["generated_text"]).groups()[0], None
+        except Exception as e:
+            return "", None
     elif task == TEXT_CLASSIFICATION:
         output = pipe(question)
         return output[0]["label"], output[0]["score"]

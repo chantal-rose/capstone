@@ -41,14 +41,14 @@ description = ("2019 researchers Google released Text-to-Text Transfer Transform
                " processing NLP last decade NLP biomedicine become prominent i.e text mining scientific literature "
                "analysis electronic health records development created need NLP methods trained corpora biomedical "
                "literature containing dense technical language characteristic scientific writing report introduce "
-               "T5-based model successfully shifted biomedical domain ")
-sampled_string = ("`` Beyonce Giselle Knowles-Carter born September 4 1981 American singer songwriter record producer"
-                  " actress Born raised Houston Texas performed various singing dancing competitions child rose fame "
-                  "late 1990s lead singer R B girl-group Destiny 's Child `` "
-                  "'The Normans Norman Nourmands French Normands Latin Normanni people 10th 11th centuries gave name "
-                  "Normandy region France descended Norse raiders pirates Denmark Iceland Norway leader Rollo agreed "
-                  "swear fealty King Charles III West Francia 'When Beyonce start becoming popular 'In country Normandy"
-                  " located")
+               "T5-based model successfully shifted biomedical domain.")
+sampled_string = ("question Beyonce start becoming popular context Beyonce Giselle Knowles-Carter born September 4"
+                  " 1981 American singer songwriter record producer actress Born raised Houston Texas performed "
+                  "various singing dancing competitions child rose fame late 1990s lead singer R B girl-group "
+                  "Destiny 's Child question country Normandy located context Normans Norman Nourmands French "
+                  "Normands Latin Normanni people 10th 11th centuries gave name Normandy region France descended "
+                  "Norse raiders pirates Denmark Iceland Norway leader Rollo agreed swear fealty King Charles III "
+                  "West Francia")
 
 
 class TestUtils(unittest.TestCase):
@@ -164,17 +164,17 @@ class TestUtils(unittest.TestCase):
         mock_os.path.return_value.dirname.return_value = "test"
         mock_os.listdir.side_effect = [[], ["file1", "file2"]]
         mock_json.load.side_effect = [test_json, test_json]
-        mock_json.dumps.return_value = '{"model": "model1"}'
         mock_get_embeddings.side_effect = [np.array([1, 2, 3]), np.array([1, 2, 3])]
         with mock.patch("builtins.open", mock.mock_open(read_data="data")) as mock_file:
-            assert utils.create_map() == '{"model": "model1"}'
+            utils.create_map()
+            mock_json.dumps.assert_called()
 
     @mock.patch.object(utils, "create_map")
     def test_filter_map(self, mock_create_map):
         model_map_list = [{"model": "model1", "type": ["mcq"], "downloads": 2},
                           {"model": "model2", "type": ["extractive", "mcq"], "downloads": 1},
                           {"model": "model3", "type": ["extractive"], "downloads": 1}]
-        mock_create_map.return_value = json.dumps(model_map_list)
+        mock_create_map.return_value = model_map_list
         expected_response = [{"model": "model1", "type": ["mcq"], "downloads": 2},
                              {"model": "model2", "type": ["extractive", "mcq"], "downloads": 1}]
         assert utils.filter_map("type", "mcq", 10) == expected_response
@@ -187,7 +187,7 @@ class TestUtils(unittest.TestCase):
                               mock_compute_similarity):
         model_map_list = [{"model": "model1", "embeddings": 0}, {"model": "model2", "embeddings": 0},
                           {"model": "model3", "embeddings": 0}]
-        mock_create_map.return_value = json.dumps(model_map_list)
+        mock_create_map.return_value = model_map_list
         mock_compute_similarity.side_effect = [0.1, 0.2, 0.3]
         assert utils.get_top_k_models("q", "c", 2) == [{'model': 'model3', 'embeddings': 0,
                                                         'similarity': 0.3}, {'model': 'model2', 'embeddings': 0,
