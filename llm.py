@@ -6,7 +6,7 @@ load_dotenv()
 client = OpenAI()
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-def query_llm(messages: list[str]) -> str:
+def query_llm(messages: list[dict[str, str]]) -> str:
     completion = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=messages
