@@ -1,6 +1,5 @@
 """Module that contains all helper functions for the system.
 """
-from time import sleep
 from functools import lru_cache
 from heapq import nlargest
 import json
@@ -198,7 +197,7 @@ def get_string_to_encode(data: dict) -> str:
     return " ".join(filtered_tokens)
 
 
-def create_map(filenames: list = None, force_recreate: bool = False) -> str:
+def create_map(filenames: list = None, force_recreate: bool = False) -> list:
     """Creates a list of dictionary objects from the model's .json files.
 
     In addition to metadata from the .json file, it also populates the embedding of the model.
@@ -231,13 +230,13 @@ def create_map(filenames: list = None, force_recreate: bool = False) -> str:
             data = json.load(model_json)
             data['embeddings'] = get_embeddings(get_string_to_encode(data)).tolist()
             past_map.append(data)            
-    
+
     model_map_list = json.dumps(past_map)
-        
+
     with open(os.path.dirname(__file__) + "/model_map.json", "w+") as f:
         f.write(model_map_list)
 
-    return model_map_list
+    return past_map
 
 
 def get_top_k_models(question: str, context: str, k: int = 2) -> list:
@@ -248,7 +247,7 @@ def get_top_k_models(question: str, context: str, k: int = 2) -> list:
     :param k: Number of models required
     :return List of models
     """
-    model_map = json.loads(create_map())
+    model_map = create_map()
     embedding = get_embeddings(f"question: {question} context: {context}")
 
     for model in model_map:
@@ -272,7 +271,7 @@ def filter_map(filter_field: str,
     :return: list of model dictionaries
     :raises Exception
     """
-    model_map = json.loads(create_map())
+    model_map = create_map()
     filtered_models = []
     for model in model_map:
         if field_val in model[filter_field]:

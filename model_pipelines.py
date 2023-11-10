@@ -1,3 +1,4 @@
+from functools import lru_cache
 import re
 from typing import Union
 
@@ -20,6 +21,10 @@ TEXT2TEXT_GENERTAION = "text2text-generation"
 TOKENIZER = "tokenizer"
 
 
+# TODO: Model inference on gpu is faster, consider setting a device in pipeline
+
+
+@lru_cache()
 def load_models():  # pragma: no cover
     models = {
         "microsoft/biogpt": {
@@ -32,11 +37,11 @@ def load_models():  # pragma: no cover
             MODEL: AutoModelForQuestionAnswering.from_pretrained("akdeniz27/deberta-v2-xlarge-cuad"),
             TASK: QUESTION_ANSWERING
         },
-        "AlexWortega/taskGPT2-xl-v0.2a": {
-            TOKENIZER: AutoTokenizer.from_pretrained("AlexWortega/taskGPT2-xl-v0.2a"),
-            MODEL: AutoModelForCausalLM.from_pretrained("AlexWortega/taskGPT2-xl-v0.2a"),
-            TASK: TEXT_GENERATION
-        },
+        # "AlexWortega/taskGPT2-xl-v0.2a": {
+        #     TOKENIZER: AutoTokenizer.from_pretrained("AlexWortega/taskGPT2-xl-v0.2a"),
+        #     MODEL: AutoModelForCausalLM.from_pretrained("AlexWortega/taskGPT2-xl-v0.2a"),
+        #     TASK: TEXT_GENERATION
+        # },
         "mrm8488/longformer-base-4096-finetuned-squadv2": {
             TOKENIZER: AutoTokenizer.from_pretrained("mrm8488/longformer-base-4096-finetuned-squadv2"),
             MODEL: AutoModelForQuestionAnswering.from_pretrained("mrm8488/longformer-base-4096-finetuned-squadv2"),

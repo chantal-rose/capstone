@@ -43,6 +43,7 @@ def get_n_best_paragraphs(page: wiki.WikipediaPage, query: str, n: int = 1) -> s
 
 
 def get_content(query: str) -> str:
+    # TODO: implement DPR https://huggingface.co/docs/transformers/model_doc/dpr
     page = get_wiki_page(query)
     return get_n_best_paragraphs(page, query, n=1)
 

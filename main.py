@@ -26,13 +26,18 @@ def send_input_to_system(models: dict, user_input: str) -> None:
     :param user_input: Raw user query
     :return:
     """
-    parser = GPT4InputParser()
-    parser.parse(user_input)
+    # parser = GPT4InputParser()
+    # parser.parse(user_input)
 
-    type = parser.type
-    domain = parser.domain
-    question = parser.question
-    context = parser.context
+    # type = parser.type
+    # domain = parser.domain
+    # question = parser.question
+    # context = parser.context
+    type = "bio"
+    domain = "extractive"
+    question = "Is methylation of the FGFR2 gene associated with high birth weight centile in humans?"
+    context = ("This study examined links between DNA methylation and birth weight centile (BWC), and explored the"
+               " impact of genetic variation.")
 
     top_k_embedding_models = get_top_k_models(question, context, K)
     top_k_domain_models = filter_map(DOMAIN, domain, K)
@@ -52,15 +57,19 @@ def send_input_to_system(models: dict, user_input: str) -> None:
     answer_scores = [score if score is not None else average_score for score in answer_scores]
 
     final_answer = get_final_answer(answers, answer_scores)
+    print("Models picked\n")
+    all_models = [model["model_name"] for model in top_k_embedding_models + top_k_domain_models + top_k_type_models]
+    print(all_models)
     print("All returned answers\n")
     print(answers)
     print("Final answer\n")
     print(final_answer)
 
-    # implement feedback loop with retries and query reformulation
-    # implement answer verification
+    # TODO: implement feedback loop with retries and query reformulation
+    # TODO: implement answer verification
 
 
+# TODO: Create flask app endpoint
 # @app.route("/ask", methods=['POST'])
 # def ask_system():
 #     request_data = request.get_json()
@@ -71,6 +80,7 @@ def send_input_to_system(models: dict, user_input: str) -> None:
 
 if __name__ == "__main__":
     model_map = load_models()
-    query = sys.argv[1]
+    query = ""
+
     send_input_to_system(model_map, query)
     # app.run(port="8082", threaded=True, host=("0.0.0.0"))
