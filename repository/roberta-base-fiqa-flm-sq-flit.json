@@ -2,7 +2,7 @@
   "model_name": "vanadhi/roberta-base-fiqa-flm-sq-flit",
   "type": ["extractive"],
   "description": "This model is a fine-tuned version of roberta-base on a custom dataset create for question answering in financial domain. The model is intended to be used for a custom Questions Answering system in the BFSI domain.",
-  "downloads": 172,
+  "downloads": 480,
   "dataset": ["squad"],
   "columns": [["question", "context"]],
   "domain": ["math", "finance"],
