@@ -166,6 +166,12 @@ def get_string_from_row(row: pd.Series, columns: list) -> str:
     return s
 
 
+def tokenize(text: str) -> list[str]:
+    word_tokens = word_tokenize(text.lower())
+    filtered_tokens = [w for w in word_tokens if w not in stopwords and w not in punctuations]
+    return filtered_tokens
+
+
 def get_string_to_encode(data: dict) -> str:
     """Returns a string which is a concatenation of model description, sample questions, and sample contexts from
     the dataset the model was trained on.
@@ -192,8 +198,7 @@ def get_string_to_encode(data: dict) -> str:
         shuffled_string = shuffled_string.replace("\n", "")
     
     total_string = data["description"] + shuffled_string
-    word_tokens = word_tokenize(total_string)
-    filtered_tokens = [w for w in word_tokens if not w.lower() in stopwords and not w.lower() in punctuations]
+    filtered_tokens = tokenize(total_string)
     return " ".join(filtered_tokens)
 
 

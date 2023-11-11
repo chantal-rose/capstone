@@ -3,10 +3,9 @@ import string
 
 import prompts
 from llm_utils import query_llm
+from utils import tokenize
 
 import wikipedia as wiki
-from nltk import word_tokenize
-from nltk.corpus import stopwords
 from rank_bm25 import BM25Okapi
 
 
@@ -41,10 +40,6 @@ def get_wiki_page(query: str, max_tries: int = 3) -> wiki.WikipediaPage:
 
 
 def get_n_best_paragraphs(page: wiki.WikipediaPage, query: str, n: int = 1) -> str:
-    def tokenize(text: str):
-        stops = set(stopwords.words("english")) | set(string.punctuation)
-        return [t for t in word_tokenize(text.lower()) if t not in stops]
-
     paragraphs = [text for t in re.split("=+ [^=]* =+", page.content) if (text := t.strip())]
     bm25 = BM25Okapi([tokenize(p) for p in paragraphs])
     return " ".join(bm25.get_top_n(tokenize(query), paragraphs, n))
