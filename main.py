@@ -1,6 +1,6 @@
 """Main model for a pass through the system"""
 # from flask import Flask, request
-from llm_utils import GPT4InputParser
+from llm_utils import GPT4InputParser,domain_label
 from model_pipelines import get_answer_from_model
 from model_pipelines import load_models
 from model_pipelines import load_pipeline
@@ -35,14 +35,11 @@ def send_input_to_system(models: dict, question: str, context: str) -> str:
     # question = parser.question
     # context = parser.context
     type = "extractive"
-    domain = "bio"
-    question = "Can 'high-risk' human papillomaviruses (HPVs) be detected in human breast milk?"
-    context = ("Using polymerase chain reaction techniques, we evaluated the presence of HPV infection in human"
-               " breast milk collected from 21 HPV-positive and 11 HPV-negative mothers. Of the 32 studied human"
-               " milk specimens, no 'high-risk' HPV 16, 18, 31, 33, 35, 39, 45, 51, 52, 56, 58 or 58 DNA was detected.")
+    
 
     if not context:
         context = get_context(question)
+    domain = domain_label(context)
 
     top_k_embedding_models = get_top_k_models(question, context, K)
     top_k_domain_models = filter_map(DOMAIN, domain, K)
