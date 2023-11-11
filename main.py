@@ -15,7 +15,7 @@ TYPE = "type"
 K = 3
 
 
-def send_input_to_system(models: dict, user_input: str) -> str:
+def send_input_to_system(models: dict, question: str, context: str) -> str:
     """Passes the user input to the system.
 
     This function implements the entire pipeline.
