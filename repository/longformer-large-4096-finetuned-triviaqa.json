@@ -7,6 +7,6 @@
   "dataset":["trivia_qa"],
   "configs": ["rc.wikipedia"],
   "task": "question-answering",
-  "columns": [["question", "context"]],
+  "columns": [["question", "entity_pages"]],
   "split" : ["validation"]
 }
