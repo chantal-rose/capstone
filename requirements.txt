@@ -12,3 +12,5 @@ sentence-transformers==2.2.2
 spacy==3.7.0
 torch==2.0.1
 transformers==4.33.2
+python-dotenv
+tenacity
