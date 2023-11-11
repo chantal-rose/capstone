@@ -176,7 +176,6 @@ def get_string_to_encode(data: dict) -> str:
     """
     shuffled_string = ""
     for ind, dataset in enumerate(data["dataset"]):
-        print(dataset)
         column_tuple = tuple(data["columns"][ind])
         config = None
         if "configs" in data:

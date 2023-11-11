@@ -1,7 +1,6 @@
-import sys
-
+"""Main model for a pass through the system"""
 # from flask import Flask, request
-from gpt_utils import GPT4InputParser
+from llm_utils import GPT4InputParser
 from model_pipelines import get_answer_from_model
 from model_pipelines import load_models
 from model_pipelines import load_pipeline
@@ -16,7 +15,7 @@ TYPE = "type"
 K = 3
 
 
-def send_input_to_system(models: dict, user_input: str) -> None:
+def send_input_to_system(models: dict, user_input: str) -> str:
     """Passes the user input to the system.
 
     This function implements the entire pipeline.
@@ -48,6 +47,7 @@ def send_input_to_system(models: dict, user_input: str) -> None:
     answer_scores = []
 
     all_models = top_k_embedding_models + top_k_domain_models + top_k_type_models
+    # TODO: Consider making it a set so that the same models aren't reinforcing the wrong answer
 
     for model in all_models:
         pipeline = load_pipeline(models, model)
@@ -68,6 +68,7 @@ def send_input_to_system(models: dict, user_input: str) -> None:
     print(answers)
     print("Final answer:\n")
     print(final_answer)
+    return final_answer
 
     # TODO: implement feedback loop with retries and query reformulation
     # TODO: implement answer verification
