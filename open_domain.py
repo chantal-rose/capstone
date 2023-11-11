@@ -10,19 +10,18 @@ from nltk.corpus import stopwords
 from rank_bm25 import BM25Okapi
 
 
-def get_topic(query: str, options: list[str] = None):
+def get_topic(query: str, options: list[str] = []):
     if options:
-        topic = query_llm(messages=[
-            {"role": "system", "content": prompts.GET_TOPIC_WITH_OPTIONS},
-            {"role": "user", "content": f"options: {options}\nquery: {query}"}
-            ])
-        return topic
+        system_prompt = prompts.GET_TOPIC_WITH_OPTIONS
+        user_prompt = f"options: {options}\nquery: {query}"
     else:
-        topic = query_llm(messages=[
-            {"role": "system", "content": prompts.GET_TOPIC_NO_OPTIONS},
-            {"role": "user", "content": f"query: {query}"}
-            ])
-        return topic
+        system_prompt = prompts.GET_TOPIC_NO_OPTIONS
+        user_prompt = f"query: {query}"
+    topic = query_llm(messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+        ], model="gpt-4")
+    return topic
 
 
 def get_wiki_page(query: str, max_tries: int = 3) -> wiki.WikipediaPage:
