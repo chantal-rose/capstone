@@ -1,5 +1,5 @@
 import re
-
+import os
 from dotenv import load_dotenv
 from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_random_exponential
@@ -35,10 +35,8 @@ def query_llm(messages: list[dict[str, str]], model: str = DEFAULT_MODEL) -> str
     return response
 
 def domain_label(context):
-    api_key = input("enter the api key")
-    org_key = input("enter the org key")
-    SKLLMConfig.set_openai_key(api_key)
-    SKLLMConfig.set_openai_org(org_key)  
+    SKLLMConfig.set_openai_key(os.environ["OPENAI_API_KEY"])
+    SKLLMConfig.set_openai_org(os.environ["OPENAI_ORG_KEY"])  
     d = {"generic-QA":"nan","legal-QA":"legal",'biology-QA':'bio'}
     clf = ZeroShotGPTClassifier(openai_model=DEFAULT_MODEL)
     clf.fit(None, ["biology-QA","legal-QA","generic-QA"])
