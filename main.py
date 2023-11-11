@@ -7,6 +7,8 @@ from model_pipelines import load_pipeline
 from utils import filter_map
 from utils import get_final_answer
 from utils import get_top_k_models
+from open_domain import get_context
+from answer_verification import verify_answer
 
 
 # app = Flask(__name__)
@@ -39,6 +41,9 @@ def send_input_to_system(models: dict, user_input: str) -> str:
                " breast milk collected from 21 HPV-positive and 11 HPV-negative mothers. Of the 32 studied human"
                " milk specimens, no 'high-risk' HPV 16, 18, 31, 33, 35, 39, 45, 51, 52, 56, 58 or 58 DNA was detected.")
 
+    if not context:
+        context = get_context(question)
+
     top_k_embedding_models = get_top_k_models(question, context, K)
     top_k_domain_models = filter_map(DOMAIN, domain, K)
     top_k_type_models = filter_map(TYPE, type, K)
@@ -61,6 +66,9 @@ def send_input_to_system(models: dict, user_input: str) -> str:
     answer_scores = [score if score is not None else average_score for score in answer_scores]
 
     final_answer = get_final_answer(answers, answer_scores)
+
+    if not verify_answer(question, context, final_answer):
+        final_answer += " (unknown)"
     print("Models picked:\n")
     all_models = [model["model_name"] for model in all_models]
     print(all_models)
