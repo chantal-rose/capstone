@@ -1,19 +1,27 @@
 import re
 import string
 
-import wikipedia as wiki
+import prompts
+from llm import query_llm
 
+import wikipedia as wiki
 from nltk import word_tokenize
 from nltk.corpus import stopwords
 from rank_bm25 import BM25Okapi
 
-
 def get_topic(query: str, options: list[str]=list()):
-    # Mock function
     if options:
-        return options[0]
+        topic = query_llm(messages=[
+            {"role": "system", "content": prompts.GET_TOPIC_WITH_OPTIONS},
+            {"role": "user", "content": f"options: {options}\nquery: {query}"}
+            ])
+        return topic
     else:
-        return query.rstrip("?").split(" ")[-1]
+        topic = query_llm(messages=[
+            {"role": "system", "content": prompts.GET_TOPIC_NO_OPTIONS},
+            {"role": "user", "content": f"query: {query}"}
+            ])
+        return topic
     
 def get_wiki_page(query: str, max_tries: int=3) -> wiki.WikipediaPage:
     options = []
@@ -44,4 +52,5 @@ def get_content(query: str) -> str:
     return get_n_best_paragraphs(page, query, n=1)
 
 if __name__ == "__main__":
-    print(get_content("What are the different levels in taxonomy?"))
+    while True:
+        print(get_content(input()))
