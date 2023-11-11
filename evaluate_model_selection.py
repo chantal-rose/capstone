@@ -9,6 +9,12 @@ from utils import create_map
 from utils import get_embeddings
 
 
+# Python program to illustrate the intersection
+# of two lists in most simple way
+def intersection(lst1, lst2):
+    intersection_list = [value for value in lst1 if value in lst2]
+    return intersection_list
+
 def evaluate(df, k):
     correct = 0
     total = len(dataset)
@@ -23,8 +29,8 @@ def evaluate(df, k):
 
         best_models = nlargest(k, model_map, key=lambda x: x["similarity"])
         model_names = [model["model_name"] for model in best_models]
-
-        if row["ground_truth"] in model_names:  # may be more than one ground-truth
+        
+        if len(intersection(model_names, row["models"])):
             correct += 1
 
     print("Accuracy: ", correct / total)
@@ -37,6 +43,6 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    dataset = pd.read_csv(args.data_path, delimiter="\t")
+    dataset = pd.read_csv(args.data_path, delimiter=",")
     n = int(args.n)
     evaluate(dataset, n)
