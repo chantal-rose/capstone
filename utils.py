@@ -257,7 +257,7 @@ def get_top_k_models(question: str, context: str, k: int = 2) -> list:
         return x["similarity"]
 
     best_models = nlargest(k, model_map, key=sort_key)
-    return [model for model in best_models]
+    return best_models
 
 
 def filter_map(filter_field: str,

@@ -20,7 +20,7 @@ def get_topic(query: str, options: list[str] = []):
     topic = query_llm(messages=[
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt}
-        ], model="gpt-4")
+        ])
     return topic
 
 
@@ -50,11 +50,11 @@ def get_n_best_paragraphs(page: wiki.WikipediaPage, query: str, n: int = 1) -> s
     return " ".join(bm25.get_top_n(tokenize(query), paragraphs, n))
 
 
-def get_content(query: str) -> str:
+def get_context(query: str) -> str:
     page = get_wiki_page(query)
     return get_n_best_paragraphs(page, query, n=1)
 
 
 if __name__ == "__main__":
     while True:
-        print(get_content(input()))
+        print(get_context(input()))
