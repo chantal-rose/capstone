@@ -8,14 +8,12 @@ ANSWER VERIFICATION:
 
 
 """
-from base import HuggingFaceModel
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 
 
-class PrimeQAAnswerVerificationModel(HuggingFaceModel):
+class PrimeQAAnswerVerificationModel:
     def __init__(self):
-        HuggingFaceModel.__init__(self)
         self.model_name = "PrimeQA/tydiqa-boolean-answer-classifier"
         self.labels = [False, False, True]  # ['no', 'no-answer', 'yes']
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
