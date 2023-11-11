@@ -3,7 +3,10 @@ import re
 from dotenv import load_dotenv
 from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_random_exponential
-
+from skllm import ZeroShotGPTClassifier
+from skllm import MultiLabelZeroShotGPTClassifier
+from skllm.config import SKLLMConfig
+import pandas as pd
 
 load_dotenv()
 client = OpenAI()
@@ -14,7 +17,7 @@ domain_pattern = re.compile(r"^Domain:\s([\w ]+)")
 question_pattern = re.compile(r"^Question:\s([\w ]+)")
 type_pattern = re.compile(r"^Type:\s([\w ]+)")
 
-DEFAULT_MODEL = "gpt-4"
+DEFAULT_MODEL = "gpt-3.5-turbo-1106"
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
 def query_llm(messages: list[dict[str, str]], model: str = DEFAULT_MODEL) -> str:
@@ -30,6 +33,17 @@ def query_llm(messages: list[dict[str, str]], model: str = DEFAULT_MODEL) -> str
     )
     response = completion.choices[0].message.content
     return response
+
+def domain_label(context):
+    api_key = input("enter the api key")
+    org_key = input("enter the org key")
+    SKLLMConfig.set_openai_key(api_key)
+    SKLLMConfig.set_openai_org(org_key)  
+    d = {"generic-QA":"nan","legal-QA":"legal",'biology-QA':'bio'}
+    clf = ZeroShotGPTClassifier(openai_model=DEFAULT_MODEL)
+    clf.fit(None, ["biology-QA","legal-QA","generic-QA"])
+    predicted = clf.predict([context[:3000]])
+    return d[predicted[0]]
 
 
 class GPT4InputParser:  # pragma: no cover
