@@ -10,6 +10,8 @@ from transformers import (AutoModelForCausalLM,
                           BioGptTokenizer)
 from transformers import pipeline, set_seed
 
+from answer_verification import get_generative_confidence
+
 
 MODEL = "model"
 MODEL_NAME = "model_name"
@@ -129,11 +131,11 @@ def get_answer_from_model(pipe: pipeline,
         text = "question: {} context: {} answer: ".format(question, context)
         pattern = re.compile(r".*answer: (.+)")
         output = pipe(text, max_length=100, num_return_sequences=1, do_sample=True)
-        # TODO: Get confidence scores from text-generation models
-        try:
-            return pattern.match(output[0]["generated_text"]).groups()[0], None
-        except Exception as e:
-            return "", None
+        if (answer_match := pattern.match(output[0]["generated_text"])):
+            answer = answer_match.groups()[0]
+            return answer, get_generative_confidence(question, context, answer)
+        else:
+            return "", 0.0
     elif task == TEXT_CLASSIFICATION:
         output = pipe(question)
         return output[0]["label"], output[0]["score"]
