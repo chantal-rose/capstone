@@ -7,7 +7,13 @@ import pandas as pd
 from utils import compute_similarity_between_embeddings
 from utils import create_map
 from utils import get_embeddings
+import os
 
+import sys 
+# Python program to illustrate the intersection
+# of two lists using set() and intersection()
+def Intersection(lst1, lst2):
+    return set(lst1).intersection(lst2)
 
 # Python program to illustrate the intersection
 # of two lists in most simple way
@@ -30,13 +36,18 @@ def evaluate(df, k):
         best_models = nlargest(k, model_map, key=lambda x: x["similarity"])
         model_names = [model["model_name"] for model in best_models]
         
+<<<<<<< Updated upstream:evaluate_model_selection.py
         if len(intersection(model_names, row["models"])):
+=======
+        if len(Intersection(model_names, row["models"])):
+>>>>>>> Stashed changes:evaluation/evaluate_model_selection.py
             correct += 1
 
     print("Accuracy: ", correct / total)
 
 
 if __name__ == "__main__":
+    sys.path.append(os.path.abspath(''))
     parser = argparse.ArgumentParser("Evaluate Model Selection")
     parser.add_argument("--data_path", required=True, help="location to dataset")
     parser.add_argument("--n", required=True, help="number of models to choose")
