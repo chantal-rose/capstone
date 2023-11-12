@@ -3,7 +3,7 @@
     "type": ["extractive"],
     "description":"An adapter for the roberta-base model that was trained on the hotpot_qa dataset and includes a prediction head for question answering.",
     "downloads": 0,
-    "domain": "math",
+    "domain": ["math"],
     "dataset":["hotpot_qa"],
     "configs": ["fullwiki"],
     "task": "question-answering",
