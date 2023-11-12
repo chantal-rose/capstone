@@ -3,6 +3,7 @@
 from llm_utils import GPT4InputParser
 from model_pipelines import get_answer_from_model
 from model_pipelines import load_models
+from model_pipelines import load_model
 from model_pipelines import load_pipeline
 from utils import filter_map
 from utils import get_final_answer
@@ -12,10 +13,10 @@ from utils import get_top_k_models
 # app = Flask(__name__)
 DOMAIN = "domain"
 TYPE = "type"
-K = 3
+K = 2
 
 
-def send_input_to_system(models: dict, user_input: str) -> str:
+def send_input_to_system(models: dict, question: str, context: str, domain_test: str) -> str:
     """Passes the user input to the system.
 
     This function implements the entire pipeline.
@@ -33,11 +34,11 @@ def send_input_to_system(models: dict, user_input: str) -> str:
     # question = parser.question
     # context = parser.context
     type = "extractive"
-    domain = "bio"
-    question = "Can 'high-risk' human papillomaviruses (HPVs) be detected in human breast milk?"
-    context = ("Using polymerase chain reaction techniques, we evaluated the presence of HPV infection in human"
-               " breast milk collected from 21 HPV-positive and 11 HPV-negative mothers. Of the 32 studied human"
-               " milk specimens, no 'high-risk' HPV 16, 18, 31, 33, 35, 39, 45, 51, 52, 56, 58 or 58 DNA was detected.")
+    
+
+    if not context:
+        context = get_context(question)
+    domain = domain_test#domain_label(context)
 
     top_k_embedding_models = get_top_k_models(question, context, K)
     top_k_domain_models = filter_map(DOMAIN, domain, K)
@@ -47,20 +48,35 @@ def send_input_to_system(models: dict, user_input: str) -> str:
     answer_scores = []
 
     all_models = top_k_embedding_models + top_k_domain_models + top_k_type_models
+    
     # TODO: Consider making it a set so that the same models aren't reinforcing the wrong answer
 
     for model in all_models:
+        #print(model['model_name'])
+        models = load_model(model['model_name'])
+        if models == {}:
+            continue
         pipeline = load_pipeline(models, model)
-        answer, confidence_score = get_answer_from_model(pipeline, models, model, question, context)
-        if answer:
-            answers.append(answer)
-            answer_scores.append(confidence_score)
+        try:
+            answer, confidence_score = get_answer_from_model(pipeline, models, model, question, context)
+        except Exception as e:
+            print(e)
+            continue
+        else:
+            if answer:
+                answers.append(answer)
+                answer_scores.append(confidence_score)
+        #del models[model['model_name']]['model']
+        
 
     temp_scores = [score for score in answer_scores if score is not None]
     average_score = sum(temp_scores) / len(temp_scores)
     answer_scores = [score if score is not None else average_score for score in answer_scores]
 
     final_answer = get_final_answer(answers, answer_scores)
+
+    # if not verify_answer(question, context, final_answer):
+    #     final_answer += " (unknown)"
     print("Models picked:\n")
     all_models = [model["model_name"] for model in all_models]
     print(all_models)
