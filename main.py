@@ -1,23 +1,21 @@
 """Main model for a pass through the system"""
 # from flask import Flask, request
-from llm_utils import GPT4InputParser,domain_label
 from model_pipelines import get_answer_from_model
 from model_pipelines import load_models
+from model_pipelines import load_model
 from model_pipelines import load_pipeline
 from utils import filter_map
 from utils import get_final_answer
 from utils import get_top_k_models
-from open_domain import get_context
-from answer_verification import verify_answer
 
 
 # app = Flask(__name__)
 DOMAIN = "domain"
 TYPE = "type"
-K = 3
+K = 2
 
 
-def send_input_to_system(models: dict, question: str, context: str) -> str:
+def send_input_to_system(models: dict, question: str, context: str, domain_test: str) -> str:
     """Passes the user input to the system.
 
     This function implements the entire pipeline.
@@ -27,36 +25,45 @@ def send_input_to_system(models: dict, question: str, context: str) -> str:
     :param user_input: Raw user query
     :return:
     """
-    # parser = GPT4InputParser()
-    # parser.parse(user_input)
-
-    # type = parser.type
-    # domain = parser.domain
-    # question = parser.question
-    # context = parser.context
     type = "extractive"
-    
 
     if not context:
         context = get_context(question)
-    domain = domain_label(context)
+    domain = domain_test
 
-    top_k_embedding_models = get_top_k_models(question, context, K)
     top_k_domain_models = filter_map(DOMAIN, domain, K)
-    top_k_type_models = filter_map(TYPE, type, K)
+    top_k_embedding_models = get_top_k_models(question, context, K, top_k_domain_models)
+    top_k_type_models = filter_map(TYPE, type, K, top_k_embedding_models + top_k_domain_models)
 
     answers = []
     answer_scores = []
 
     all_models = top_k_embedding_models + top_k_domain_models + top_k_type_models
+    
+    all_model_names = [model['model_name'] for model in all_models]
+    if len(all_model_names) != len(set(all_model_names)):
+        print("Not equal")
+        breakpoint()
+    
     # TODO: Consider making it a set so that the same models aren't reinforcing the wrong answer
 
     for model in all_models:
+        models = load_model(model['model_name'])
+        if models == {}:
+            continue
         pipeline = load_pipeline(models, model)
-        answer, confidence_score = get_answer_from_model(pipeline, models, model, question, context)
-        if answer:
-            answers.append(answer)
-            answer_scores.append(confidence_score)
+        try:
+            answer, confidence_score = get_answer_from_model(pipeline, models, model, question, context)
+        except Exception as e:
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            print("Exception for", model['model_name'])
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            print(e)
+            continue
+        else:
+            if answer:
+                answers.append(answer)
+                answer_scores.append(confidence_score)
 
     temp_scores = [score for score in answer_scores if score is not None]
     average_score = sum(temp_scores) / len(temp_scores)
@@ -64,8 +71,8 @@ def send_input_to_system(models: dict, question: str, context: str) -> str:
 
     final_answer = get_final_answer(answers, answer_scores)
 
-    if not verify_answer(question, context, final_answer):
-        final_answer += " (unknown)"
+    # if not verify_answer(question, context, final_answer):
+    #     final_answer += " (unknown)"
     print("Models picked:\n")
     all_models = [model["model_name"] for model in all_models]
     print(all_models)

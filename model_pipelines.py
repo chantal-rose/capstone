@@ -2,15 +2,13 @@ from functools import lru_cache
 import re
 from typing import Union
 
+import torch
+
 from transformers import (AutoModelForCausalLM,
                           AutoModelForQuestionAnswering,
                           AutoModelForSeq2SeqLM,
-                          AutoTokenizer,
-                          BioGptForCausalLM,
-                          BioGptTokenizer)
+                          AutoTokenizer)
 from transformers import pipeline, set_seed
-
-from answer_verification import get_generative_confidence
 
 
 MODEL = "model"
@@ -29,9 +27,9 @@ TOKENIZER = "tokenizer"
 @lru_cache()
 def load_models():  # pragma: no cover
     models = {
-        "microsoft/biogpt": {
-            TOKENIZER: BioGptTokenizer.from_pretrained("microsoft/biogpt"),
-            MODEL: BioGptForCausalLM.from_pretrained("microsoft/biogpt"),
+        "microsoft/BioGPT-Large-PubMedQA": {
+            TOKENIZER: AutoTokenizer.from_pretrained("microsoft/BioGPT-Large-PubMedQA"),
+            MODEL: AutoTokenizer.from_pretrained("microsoft/BioGPT-Large-PubMedQA"),
             TASK: TEXT_GENERATION
         },
         "akdeniz27/deberta-v2-xlarge-cuad": {
@@ -39,11 +37,6 @@ def load_models():  # pragma: no cover
             MODEL: AutoModelForQuestionAnswering.from_pretrained("akdeniz27/deberta-v2-xlarge-cuad"),
             TASK: QUESTION_ANSWERING
         },
-        # "AlexWortega/taskGPT2-xl-v0.2a": {
-        #     TOKENIZER: AutoTokenizer.from_pretrained("AlexWortega/taskGPT2-xl-v0.2a"),
-        #     MODEL: AutoModelForCausalLM.from_pretrained("AlexWortega/taskGPT2-xl-v0.2a"),
-        #     TASK: TEXT_GENERATION
-        # },
         "mrm8488/longformer-base-4096-finetuned-squadv2": {
             TOKENIZER: AutoTokenizer.from_pretrained("mrm8488/longformer-base-4096-finetuned-squadv2"),
             MODEL: AutoModelForQuestionAnswering.from_pretrained("mrm8488/longformer-base-4096-finetuned-squadv2"),
@@ -87,10 +80,84 @@ def load_models():  # pragma: no cover
         "ozcangundes/T5-base-for-BioQA": {
             TOKENIZER: AutoTokenizer.from_pretrained("ozcangundes/T5-base-for-BioQA"),
             MODEL: AutoModelForSeq2SeqLM.from_pretrained("ozcangundes/T5-base-for-BioQA"),
-            TASK: TEXT_GENERATION
+            TASK: QUESTION_ANSWERING
         }
     }
     return models
+
+
+@lru_cache()
+def load_model(model_name):
+    if model_name == "microsoft/BioGPT-Large-PubMedQA":
+        model = {
+            "microsoft/BioGPT-Large-PubMedQA": {
+                TOKENIZER: AutoTokenizer.from_pretrained("microsoft/BioGPT-Large-PubMedQA"),
+                MODEL: AutoModelForCausalLM.from_pretrained("microsoft/BioGPT-Large-PubMedQA"),
+                TASK: TEXT_GENERATION
+            }
+        }
+    elif model_name == 'akdeniz27/deberta-v2-xlarge-cuad':
+        model = {"akdeniz27/deberta-v2-xlarge-cuad": {
+            TOKENIZER: AutoTokenizer.from_pretrained("akdeniz27/deberta-v2-xlarge-cuad"),
+            MODEL: AutoModelForQuestionAnswering.from_pretrained("akdeniz27/deberta-v2-xlarge-cuad"),
+            TASK: QUESTION_ANSWERING
+        }}
+    elif model_name == "mrm8488/longformer-base-4096-finetuned-squadv2":
+        model = {"mrm8488/longformer-base-4096-finetuned-squadv2": {
+            TOKENIZER: AutoTokenizer.from_pretrained("mrm8488/longformer-base-4096-finetuned-squadv2"),
+            MODEL: AutoModelForQuestionAnswering.from_pretrained("mrm8488/longformer-base-4096-finetuned-squadv2"),
+            TASK: QUESTION_ANSWERING
+        }}
+    elif model_name == "allenai/longformer-large-4096-finetuned-triviaqa":
+        model = {"allenai/longformer-large-4096-finetuned-triviaqa": {
+            TOKENIZER: AutoTokenizer.from_pretrained("allenai/longformer-large-4096-finetuned-triviaqa"),
+            MODEL: AutoModelForQuestionAnswering.from_pretrained("allenai/longformer-large-4096-finetuned-triviaqa"),
+            TASK: QUESTION_ANSWERING
+        }}
+    elif model_name == "Sarmila/pubmed-bert-squad-covidqa":
+        model = {"Sarmila/pubmed-bert-squad-covidqa": {
+            TOKENIZER: AutoTokenizer.from_pretrained("Sarmila/pubmed-bert-squad-covidqa"),
+            MODEL: AutoModelForQuestionAnswering.from_pretrained("Sarmila/pubmed-bert-squad-covidqa"),
+            TASK: QUESTION_ANSWERING
+        }}
+    elif model_name == "vanadhi/roberta-base-fiqa-flm-sq-flit":
+        model = {"vanadhi/roberta-base-fiqa-flm-sq-flit": {
+            TOKENIZER: AutoTokenizer.from_pretrained("vanadhi/roberta-base-fiqa-flm-sq-flit"),
+            MODEL: AutoModelForQuestionAnswering.from_pretrained("vanadhi/roberta-base-fiqa-flm-sq-flit"),
+            TASK: QUESTION_ANSWERING
+        }}
+    elif model_name == "Rakib/roberta-base-on-cuad":
+        model = {"Rakib/roberta-base-on-cuad": {
+            TOKENIZER: AutoTokenizer.from_pretrained("Rakib/roberta-base-on-cuad"),
+            MODEL: AutoModelForQuestionAnswering.from_pretrained("Rakib/roberta-base-on-cuad"),
+            TASK: QUESTION_ANSWERING
+        }}
+    elif model_name == "ixa-ehu/SciBERT-SQuAD-QuAC":
+        model = {"ixa-ehu/SciBERT-SQuAD-QuAC": {
+            TOKENIZER: AutoTokenizer.from_pretrained("ixa-ehu/SciBERT-SQuAD-QuAC"),
+            MODEL: AutoModelForQuestionAnswering.from_pretrained("ixa-ehu/SciBERT-SQuAD-QuAC"),
+            TASK: QUESTION_ANSWERING
+        }}
+    elif model_name == "razent/SciFive-base-Pubmed_PMC":
+        model = {"razent/SciFive-base-Pubmed_PMC": {
+            TOKENIZER: AutoTokenizer.from_pretrained("razent/SciFive-base-Pubmed_PMC"),
+            MODEL: AutoModelForSeq2SeqLM.from_pretrained("razent/SciFive-base-Pubmed_PMC"),
+            TASK: TEXT_GENERATION
+        }}
+    elif model_name == "MaRiOrOsSi/t5-base-finetuned-question-answering":
+
+        model = {"MaRiOrOsSi/t5-base-finetuned-question-answering": {
+            TOKENIZER: AutoTokenizer.from_pretrained("MaRiOrOsSi/t5-base-finetuned-question-answering"),
+            MODEL: AutoModelForSeq2SeqLM.from_pretrained("MaRiOrOsSi/t5-base-finetuned-question-answering"),
+            TASK: TEXT2TEXT_GENERTAION
+        }}
+    elif model_name == "ozcangundes/T5-base-for-BioQA":
+        model = {"ozcangundes/T5-base-for-BioQA": {
+            TOKENIZER: AutoTokenizer.from_pretrained("ozcangundes/T5-base-for-BioQA"),
+            MODEL: AutoModelForSeq2SeqLM.from_pretrained("ozcangundes/T5-base-for-BioQA"),
+            TASK: TEXT_GENERATION
+        }}
+    return model
 
 
 def load_pipeline(models: dict, model_dict: dict) -> pipeline:
@@ -100,8 +167,9 @@ def load_pipeline(models: dict, model_dict: dict) -> pipeline:
     :param model_dict: The model json which contains important information about the model
     :return Pipeline object
     """
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model_name = model_dict[MODEL_NAME]
-    return pipeline(models[model_name][TASK], model=models[model_name][MODEL], tokenizer=models[model_name][TOKENIZER])
+    return pipeline(models[model_name][TASK], model=models[model_name][MODEL], tokenizer=models[model_name][TOKENIZER], device=device)
 
 
 def get_answer_from_model(pipe: pipeline,
@@ -131,8 +199,11 @@ def get_answer_from_model(pipe: pipeline,
         text = "question: {} context: {} answer: ".format(question, context)
         pattern = re.compile(r".*answer: (.+)")
         output = pipe(text, max_length=100, num_return_sequences=1, do_sample=True)
-        if (answer_match := pattern.match(output[0]["generated_text"])):
-            answer = answer_match.groups()[0]
+        try:
+            answer = pattern.match(output[0]["generated_text"]).groups()[0]
+        except Exception as e:
+            answer = output[0]["generated_text"]
+        if answer:
             return answer, get_generative_confidence(question, context, answer)
         else:
             return "", 0.0

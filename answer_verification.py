@@ -9,13 +9,13 @@ def _bool_qa_classifier(question: str, context: str, answer: str) -> torch.Tenso
     reformulated_question = query_llm(messages=[
         {"role": "system", "content": prompts.REFORMULATE_QUERY},
         {"role": "user", "content": f"query: {question}\nanswer: {answer}"}
-    ])
+    ], model='gpt-3.5-turbo-1106')
 
     model_name = "PrimeQA/tydiqa-boolean-answer-classifier"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSequenceClassification.from_pretrained(model_name)
     with torch.inference_mode():
-        res = tokenizer(reformulated_question, context, return_tensors="pt")
+        res = tokenizer(reformulated_question, context, return_tensors="pt", truncation=True)
         probs = model(**res).logits.softmax(-1).squeeze()
     return probs
 

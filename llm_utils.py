@@ -36,7 +36,7 @@ def query_llm(messages: list[dict[str, str]], model: str = DEFAULT_MODEL) -> str
 
 def domain_label(context):
     SKLLMConfig.set_openai_key(os.environ["OPENAI_API_KEY"])
-    SKLLMConfig.set_openai_org(os.environ["OPENAI_ORG_KEY"])  
+    SKLLMConfig.set_openai_org(os.environ["OPENAI_ORG_KEY"])
     d = {"generic-QA":"nan","legal-QA":"legal",'biology-QA':'bio'}
     clf = ZeroShotGPTClassifier(openai_model=DEFAULT_MODEL)
     clf.fit(None, ["biology-QA","legal-QA","generic-QA"])

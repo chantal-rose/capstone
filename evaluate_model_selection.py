@@ -7,6 +7,9 @@ import pandas as pd
 from utils import compute_similarity_between_embeddings
 from utils import create_map
 from utils import get_embeddings
+import os
+
+import sys 
 
 
 # Python program to illustrate the intersection
@@ -14,6 +17,7 @@ from utils import get_embeddings
 def intersection(lst1, lst2):
     intersection_list = [value for value in lst1 if value in lst2]
     return intersection_list
+
 
 def evaluate(df, k):
     correct = 0
@@ -29,14 +33,18 @@ def evaluate(df, k):
 
         best_models = nlargest(k, model_map, key=lambda x: x["similarity"])
         model_names = [model["model_name"] for model in best_models]
-        
+                
         if len(intersection(model_names, row["models"])):
             correct += 1
+            
+        if i % 50 == 0:
+            print(i)
 
     print("Accuracy: ", correct / total)
 
 
 if __name__ == "__main__":
+    sys.path.append(os.path.abspath(''))
     parser = argparse.ArgumentParser("Evaluate Model Selection")
     parser.add_argument("--data_path", required=True, help="location to dataset")
     parser.add_argument("--n", required=True, help="number of models to choose")
