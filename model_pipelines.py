@@ -87,7 +87,7 @@ def load_models():  # pragma: no cover
         "ozcangundes/T5-base-for-BioQA": {
             TOKENIZER: AutoTokenizer.from_pretrained("ozcangundes/T5-base-for-BioQA"),
             MODEL: AutoModelForSeq2SeqLM.from_pretrained("ozcangundes/T5-base-for-BioQA"),
-            TASK: TEXT_GENERATION
+            TASK: QUESTION_ANSWERING
         }
     }
     return models
@@ -96,16 +96,16 @@ def load_models():  # pragma: no cover
 @lru_cache()
 def load_model(model_name):
     print(model_name)
-    if model_name == "AlexWortega/taskGPT2-xl-v0.2a":
+    if model_name == "AlexWortega/taskGPT2-xl-v0.2a" or model_name=="AdapterHub/roberta-base-pf-hotpotqa" or model_name=="microsoft/biogpt":
         model = {}
-    if model_name == "microsoft/biogpt":
-        model = {
-            "microsoft/biogpt": {
-                TOKENIZER: BioGptTokenizer.from_pretrained("microsoft/biogpt"),
-                MODEL: BioGptForCausalLM.from_pretrained("microsoft/biogpt"),
-                TASK: TEXT_GENERATION
-            }
-        }
+    # if model_name == "microsoft/biogpt":
+    #     model = {
+    #         "microsoft/biogpt": {
+    #             TOKENIZER: BioGptTokenizer.from_pretrained("microsoft/biogpt"),
+    #             MODEL: BioGptForCausalLM.from_pretrained("microsoft/biogpt"),
+    #             TASK: TEXT_GENERATION
+    #         }
+    #     }
     elif model_name == 'akdeniz27/deberta-v2-xlarge-cuad':
         model = {"akdeniz27/deberta-v2-xlarge-cuad": {
             TOKENIZER: AutoTokenizer.from_pretrained("akdeniz27/deberta-v2-xlarge-cuad"),
@@ -184,6 +184,7 @@ def load_pipeline(models: dict, model_dict: dict) -> pipeline:
     :return Pipeline object
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # device = 'cpu'
     model_name = model_dict[MODEL_NAME]
     print(model_name)
     #print(models)

@@ -16,7 +16,7 @@ type_pattern = re.compile(r"^Type:\s([\w ]+)")
 
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-def query_llm(messages: list[dict[str, str]], model: str) -> str:
+def query_llm(messages: tuple[dict[str, str]], model: str) -> str:
     """Interacts with an OpenAI model and returns a response,
 
     :param messages: Messages with context to send to LLM

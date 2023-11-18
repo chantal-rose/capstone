@@ -40,19 +40,24 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
         context = get_context(question)
     domain = domain_test#domain_label(context)
 
-    top_k_embedding_models = get_top_k_models(question, context, K)
+    
     top_k_domain_models = filter_map(DOMAIN, domain, K)
-    top_k_type_models = filter_map(TYPE, type, K)
+    top_k_embedding_models = get_top_k_models(question, context, K, top_k_domain_models)
+    top_k_type_models = filter_map(TYPE, type, K, top_k_embedding_models + top_k_domain_models)
 
     answers = []
     answer_scores = []
 
     all_models = top_k_embedding_models + top_k_domain_models + top_k_type_models
     
+    all_model_names = [model['model_name'] for model in all_models]
+    if len(all_model_names) != len(set(all_model_names)):
+        print("Not equal")
+        breakpoint()
+    
     # TODO: Consider making it a set so that the same models aren't reinforcing the wrong answer
 
     for model in all_models:
-        #print(model['model_name'])
         models = load_model(model['model_name'])
         if models == {}:
             continue
@@ -60,14 +65,16 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
         try:
             answer, confidence_score = get_answer_from_model(pipeline, models, model, question, context)
         except Exception as e:
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            print("Exception for", model['model_name'])
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             print(e)
             continue
         else:
             if answer:
                 answers.append(answer)
                 answer_scores.append(confidence_score)
-        #del models[model['model_name']]['model']
-        
+    
 
     temp_scores = [score for score in answer_scores if score is not None]
     average_score = sum(temp_scores) / len(temp_scores)
