@@ -145,7 +145,7 @@ def load_model(model_name):
             TASK: TEXT_GENERATION
         }}
     elif model_name == "MaRiOrOsSi/t5-base-finetuned-question-answering":
-        
+
         model = {"MaRiOrOsSi/t5-base-finetuned-question-answering": {
             TOKENIZER: AutoTokenizer.from_pretrained("MaRiOrOsSi/t5-base-finetuned-question-answering"),
             MODEL: AutoModelForSeq2SeqLM.from_pretrained("MaRiOrOsSi/t5-base-finetuned-question-answering"),
@@ -168,10 +168,7 @@ def load_pipeline(models: dict, model_dict: dict) -> pipeline:
     :return Pipeline object
     """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # device = 'cpu'
     model_name = model_dict[MODEL_NAME]
-    print(model_name)
-    #print(models)
     return pipeline(models[model_name][TASK], model=models[model_name][MODEL], tokenizer=models[model_name][TOKENIZER], device=device)
 
 
@@ -201,12 +198,15 @@ def get_answer_from_model(pipe: pipeline,
     elif task == TEXT_GENERATION or task == TEXT2TEXT_GENERTAION:
         text = "question: {} context: {} answer: ".format(question, context)
         pattern = re.compile(r".*answer: (.+)")
-        output = pipe(text, max_length=4000, num_return_sequences=1, do_sample=True)
-        # TODO: Get confidence scores from text-generation models
+        output = pipe(text, max_length=100, num_return_sequences=1, do_sample=True)
         try:
-            return pattern.match(output[0]["generated_text"]).groups()[0], None
+            answer = pattern.match(output[0]["generated_text"]).groups()[0]
         except Exception as e:
-            return "", None
+            answer = output[0]["generated_text"]
+        if answer:
+            return answer, get_generative_confidence(question, context, answer)
+        else:
+            return "", 0.0
     elif task == TEXT_CLASSIFICATION:
         output = pipe(question)
         return output[0]["label"], output[0]["score"]
