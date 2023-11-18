@@ -30,3 +30,10 @@ def verify_answer(question: str, context: str, answer: str) -> bool:
     probs = _bool_qa_classifier(question, context, answer)
     label = labels[probs.argmax()]
     return label
+
+def verify_answer_gpt(question: str, context: str, answer: str) -> bool:
+    reformulated_question = query_llm(messages=[
+        {"role": "system", "content": prompts.VERIFY_ANSWER},
+        {"role": "user", "content": f"query: {question}\nanswer: {answer}\ncontext: {context}"}
+    ], model='gpt-3.5-turbo-1106')
+    return reformulated_question.lower().strip() == "true"
