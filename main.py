@@ -1,5 +1,7 @@
 """Main model for a pass through the system"""
 # from flask import Flask, request
+import pandas as pd
+
 from model_pipelines import get_answer_from_model
 from model_pipelines import load_models
 from model_pipelines import load_model
@@ -38,31 +40,33 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
 
     answers = []
     answer_scores = []
+    final_models = []
 
     all_models = top_k_embedding_models + top_k_domain_models + top_k_type_models
     
-    all_model_names = [model['model_name'] for model in all_models]
+    all_model_names = [model["model_name"] for model in all_models]
     if len(all_model_names) != len(set(all_model_names)):
         print("Not equal")
         breakpoint()
     
-    # TODO: Consider making it a set so that the same models aren't reinforcing the wrong answer
+    # TODO: Consider making it a set so that the same models aren"t reinforcing the wrong answer
 
     for model in all_models:
-        models = load_model(model['model_name'])
-        if models == {}:
-            continue
+        models = load_model(model["model_name"])
+
         pipeline = load_pipeline(models, model)
         try:
+            print("Model: ", model["model_name"])
             answer, confidence_score = get_answer_from_model(pipeline, models, model, question, context)
         except Exception as e:
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            print("Exception for", model['model_name'])
+            print("Exception for", model["model_name"])
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             print(e)
             continue
         else:
             if answer:
+                final_models.append(model["model_name"])
                 answers.append(answer)
                 answer_scores.append(confidence_score)
 
@@ -74,11 +78,10 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
 
     # if not verify_answer(question, context, final_answer):
     #     final_answer += " (unknown)"
-    print("Models picked:\n")
-    all_models = [model["model_name"] for model in all_models]
-    print(all_models)
-    print("All returned answers:\n")
-    print(answers)
+    print("Question: ", question)
+    df = pd.DataFrame(list(zip(final_models, answers, answer_scores)),
+               columns =["Model", "Answer", "Score"])
+    print(df)
     print("Final answer:\n")
     print(final_answer)
     return final_answer
@@ -88,7 +91,7 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
 
 
 # TODO: Create flask app endpoint
-# @app.route("/ask", methods=['POST'])
+# @app.route("/ask", methods=["POST"])
 # def ask_system():
 #     request_data = request.get_json()
 #

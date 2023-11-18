@@ -33,10 +33,13 @@ def evaluate(input_file, output_file):
     for index, row in tqdm(eval_df.iterrows(), desc="Evaluating datapoints"):
         if ctr == limit:
             break
-        
+
+        if isinstance(row["context"], float) or row["domain"] == "legal":
+            continue
+
         tqdm.write("############\n")
-        tqdm.write("QUESTION: " + row["question"] + "\n")
-        tqdm.write("CONTEXT: " + row["context"] + "\n")
+        # tqdm.write("QUESTION: " + row["question"] + "\n")
+        # tqdm.write("CONTEXT: " + row["context"] + "\n")
         images.append({"id": str(row["image_id"])})
         annotations.append({
             "image_id": str(row["image_id"]),

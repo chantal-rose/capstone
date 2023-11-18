@@ -17,6 +17,6 @@ transformers==4.33.2
 wikipedia==1.4.0
 pycocotools
 tqdm==4.66.1
-pycocotools==2.0.7
 pycocoevalcap==1.2
+pycocotools==2.0.7
 scikit-llm==0.1.0b3
