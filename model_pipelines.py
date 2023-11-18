@@ -7,9 +7,7 @@ import torch
 from transformers import (AutoModelForCausalLM,
                           AutoModelForQuestionAnswering,
                           AutoModelForSeq2SeqLM,
-                          AutoTokenizer,
-                          BioGptForCausalLM,
-                          BioGptTokenizer)
+                          AutoTokenizer)
 from transformers import pipeline, set_seed
 
 
@@ -29,9 +27,9 @@ TOKENIZER = "tokenizer"
 @lru_cache()
 def load_models():  # pragma: no cover
     models = {
-        "microsoft/biogpt": {
-            TOKENIZER: BioGptTokenizer.from_pretrained("microsoft/biogpt"),
-            MODEL: BioGptForCausalLM.from_pretrained("microsoft/biogpt"),
+        "microsoft/BioGPT-Large-PubMedQA": {
+            TOKENIZER: AutoTokenizer.from_pretrained("microsoft/BioGPT-Large-PubMedQA"),
+            MODEL: AutoTokenizer.from_pretrained("microsoft/BioGPT-Large-PubMedQA"),
             TASK: TEXT_GENERATION
         },
         "akdeniz27/deberta-v2-xlarge-cuad": {
@@ -39,11 +37,6 @@ def load_models():  # pragma: no cover
             MODEL: AutoModelForQuestionAnswering.from_pretrained("akdeniz27/deberta-v2-xlarge-cuad"),
             TASK: QUESTION_ANSWERING
         },
-        # "AlexWortega/taskGPT2-xl-v0.2a": {
-        #     TOKENIZER: AutoTokenizer.from_pretrained("AlexWortega/taskGPT2-xl-v0.2a"),
-        #     MODEL: AutoModelForCausalLM.from_pretrained("AlexWortega/taskGPT2-xl-v0.2a"),
-        #     TASK: TEXT_GENERATION
-        # },
         "mrm8488/longformer-base-4096-finetuned-squadv2": {
             TOKENIZER: AutoTokenizer.from_pretrained("mrm8488/longformer-base-4096-finetuned-squadv2"),
             MODEL: AutoModelForQuestionAnswering.from_pretrained("mrm8488/longformer-base-4096-finetuned-squadv2"),
@@ -95,30 +88,21 @@ def load_models():  # pragma: no cover
 
 @lru_cache()
 def load_model(model_name):
-    print(model_name)
-    if model_name == "AlexWortega/taskGPT2-xl-v0.2a" or model_name=="AdapterHub/roberta-base-pf-hotpotqa" or model_name=="microsoft/biogpt":
-        model = {}
-    # if model_name == "microsoft/biogpt":
-    #     model = {
-    #         "microsoft/biogpt": {
-    #             TOKENIZER: BioGptTokenizer.from_pretrained("microsoft/biogpt"),
-    #             MODEL: BioGptForCausalLM.from_pretrained("microsoft/biogpt"),
-    #             TASK: TEXT_GENERATION
-    #         }
-    #     }
+    if model_name == "microsoft/BioGPT-Large-PubMedQA":
+        model = {
+            "microsoft/BioGPT-Large-PubMedQA": {
+                TOKENIZER: AutoTokenizer.from_pretrained("microsoft/BioGPT-Large-PubMedQA"),
+                MODEL: AutoModelForCausalLM.from_pretrained("microsoft/BioGPT-Large-PubMedQA"),
+                TASK: TEXT_GENERATION
+            }
+        }
     elif model_name == 'akdeniz27/deberta-v2-xlarge-cuad':
         model = {"akdeniz27/deberta-v2-xlarge-cuad": {
             TOKENIZER: AutoTokenizer.from_pretrained("akdeniz27/deberta-v2-xlarge-cuad"),
             MODEL: AutoModelForQuestionAnswering.from_pretrained("akdeniz27/deberta-v2-xlarge-cuad"),
             TASK: QUESTION_ANSWERING
         }}
-        # "AlexWortega/taskGPT2-xl-v0.2a": {
-        #     TOKENIZER: AutoTokenizer.from_pretrained("AlexWortega/taskGPT2-xl-v0.2a"),
-        #     MODEL: AutoModelForCausalLM.from_pretrained("AlexWortega/taskGPT2-xl-v0.2a"),
-        #     TASK: TEXT_GENERATION
-        # },
     elif model_name == "mrm8488/longformer-base-4096-finetuned-squadv2":
-        
         model = {"mrm8488/longformer-base-4096-finetuned-squadv2": {
             TOKENIZER: AutoTokenizer.from_pretrained("mrm8488/longformer-base-4096-finetuned-squadv2"),
             MODEL: AutoModelForQuestionAnswering.from_pretrained("mrm8488/longformer-base-4096-finetuned-squadv2"),
@@ -173,8 +157,8 @@ def load_model(model_name):
             MODEL: AutoModelForSeq2SeqLM.from_pretrained("ozcangundes/T5-base-for-BioQA"),
             TASK: TEXT_GENERATION
         }}
-    #print(model[model_name].keys())
     return model
+
 
 def load_pipeline(models: dict, model_dict: dict) -> pipeline:
     """Loads a pipeline object to be used by a model for inference

@@ -4,7 +4,6 @@ import argparse
 import pandas as pd
 from transformers import set_seed
 
-from model_pipelines import load_models
 from main import send_input_to_system
 from pycocotools.coco import COCO
 from pycocoevalcap.eval import COCOEvalCap
@@ -17,8 +16,8 @@ from tqdm import tqdm
 model_map = {}
 limit = 25
 
+
 def evaluate(input_file, output_file):
-    #input_file: csv with question,context,answer
     eval_df = pd.read_csv(input_file)
     set_seed(42)
     eval_df = eval_df.sample(frac=1)
@@ -28,22 +27,21 @@ def evaluate(input_file, output_file):
     images = []
     annotations = []
     captions = []
-    generated_answers = {'id':[], 'output':[]}
+    generated_answers = {"id":[], "output":[]}
 
     ctr = 0
     for index, row in tqdm(eval_df.iterrows(), desc="Evaluating datapoints"):
-        if ct r== limit:
+        if ctr == limit:
             break
-        if type(row['context']) == float:
-            continue
+        
         tqdm.write("############\n")
-        tqdm.write("QUESTION: "+ row['question']+"\n")
-        tqdm.write("CONTEXT: "+ row['context'] +"\n")
-        images.append({"id": str(row['image_id'])})
+        tqdm.write("QUESTION: " + row["question"] + "\n")
+        tqdm.write("CONTEXT: " + row["context"] + "\n")
+        images.append({"id": str(row["image_id"])})
         annotations.append({
-            "image_id": str(row['image_id']),
-            "id": str(row['image_id']),
-            "caption": row['answers']
+            "image_id": str(row["image_id"]),
+            "id": str(row["image_id"]),
+            "caption": row["answers"]
         })
         if not isinstance(row["domain"], str):
             domain = "None"
@@ -51,40 +49,46 @@ def evaluate(input_file, output_file):
             domain = row["domain"]
        
         try:
-            system_output = send_input_to_system(model_map, row['question'], row['context'], domain)
+            system_output = send_input_to_system(model_map, row["question"], row["context"], domain)
         except Exception as e:
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             print("Exception in datapoint")
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             print(e)
-            generated_answers['id'].append(row['image_id'])
-            generated_answers['output'].append("ERROR")
+            generated_answers["id"].append(row["image_id"])
+            generated_answers["output"].append("ERROR")
             
-            with open('results.csv', 'a', newline='') as csvfile:
-                fieldnames = ['Question','Context','Result','Answer']
+            with open("results.csv", "a", newline="") as csvfile:
+                fieldnames = ["Question", "Context", "Result", "Answer"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writerow({'Question':row['question'], 'Context':row['context'], 'Result':"ERROR", 'Answer':row['answers']})
+                writer.writerow({"Question": row["question"],
+                                 "Context": row["context"],
+                                 "Result": "ERROR",
+                                 "Answer": row["answers"]})
 
             captions.append({
-                "image_id": str(row['image_id']),
+                "image_id": str(row["image_id"]),
                 "caption": "ERROR"
             })
             continue
         else:
 
-            generated_answers['id'].append(row['image_id'])
-            generated_answers['output'].append(system_output)
+            generated_answers["id"].append(row["image_id"])
+            generated_answers["output"].append(system_output)
             
-            with open('results.csv', 'a', newline='') as csvfile:
-                fieldnames = ['Question','Context','Result','Answer']
+            with open("results.csv", "a", newline="") as csvfile:
+                fieldnames = ["Question", "Context", "Result", "Answer"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writerow({'Question':row['question'], 'Context':row['context'], 'Result':system_output, 'Answer':row['answers']})
+                writer.writerow({"Question": row["question"],
+                                 "Context": row["context"],
+                                 "Result": system_output,
+                                 "Answer": row["answers"]})
 
             captions.append({
-                "image_id": str(row['image_id']),
+                "image_id": str(row["image_id"]),
                 "caption": system_output
             })
-        ctr+=1
+        ctr += 1
         
     references = {"images": images, "annotations": annotations}
 
@@ -97,8 +101,8 @@ def evaluate(input_file, output_file):
     pd.DataFrame(generated_answers).to_csv(output_file, index=False)
 
     # create coco object and coco_result object
-    annotation_file = 'references.json'
-    results_file = 'captions.json'
+    annotation_file = "references.json"
+    results_file = "captions.json"
 
     coco = COCO(annotation_file)
     coco_result = coco.loadRes(results_file)
@@ -109,18 +113,13 @@ def evaluate(input_file, output_file):
     coco_eval.evaluate()
 
     for metric, score in coco_eval.eval.items():
-        tqdm.write(f'{metric}: {score:.3f}')
-
-    # TODO: evaluate using output file and reference file
-    # https://github.com/Maluuba/nlg-eval/tree/master OR
-    # https://github.com/Aldenhovel/bleu-rouge-meteor-cider-spice-eval4imagecaption
+        tqdm.write(f"{metric}: {score:.3f}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("Evaluate System")
     parser.add_argument("--data_path", required=True, help="location to dataset")
     parser.add_argument("--output_path", required=True, help="path to write generated answers")
-
 
     args = parser.parse_args()
 

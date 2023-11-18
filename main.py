@@ -1,6 +1,5 @@
 """Main model for a pass through the system"""
 # from flask import Flask, request
-from llm_utils import GPT4InputParser
 from model_pipelines import get_answer_from_model
 from model_pipelines import load_models
 from model_pipelines import load_model
@@ -26,21 +25,12 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
     :param user_input: Raw user query
     :return:
     """
-    # parser = GPT4InputParser()
-    # parser.parse(user_input)
-
-    # type = parser.type
-    # domain = parser.domain
-    # question = parser.question
-    # context = parser.context
     type = "extractive"
-    
 
     if not context:
         context = get_context(question)
-    domain = domain_test#domain_label(context)
+    domain = domain_test
 
-    
     top_k_domain_models = filter_map(DOMAIN, domain, K)
     top_k_embedding_models = get_top_k_models(question, context, K, top_k_domain_models)
     top_k_type_models = filter_map(TYPE, type, K, top_k_embedding_models + top_k_domain_models)
@@ -74,7 +64,6 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
             if answer:
                 answers.append(answer)
                 answer_scores.append(confidence_score)
-    
 
     temp_scores = [score for score in answer_scores if score is not None]
     average_score = sum(temp_scores) / len(temp_scores)

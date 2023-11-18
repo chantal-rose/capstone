@@ -11,11 +11,13 @@ import os
 
 import sys 
 
+
 # Python program to illustrate the intersection
 # of two lists in most simple way
 def intersection(lst1, lst2):
     intersection_list = [value for value in lst1 if value in lst2]
     return intersection_list
+
 
 def evaluate(df, k):
     correct = 0
@@ -35,9 +37,8 @@ def evaluate(df, k):
         if len(intersection(model_names, row["models"])):
             correct += 1
             
-        if i%50==0:
+        if i % 50 == 0:
             print(i)
-            
 
     print("Accuracy: ", correct / total)
 
