@@ -20,7 +20,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import spacy
 import torch
 
-
+nltk.download('stopwords')
+nltk.download('punkt')
 nlp = spacy.load("en_core_web_lg")
 stopwords = set(stopwords.words('english'))
 punctuations = set(string.punctuation)
@@ -106,7 +107,7 @@ def fetch_embedding_model() -> SentenceTransformer:
 
     :return: Sentence Transformer model
     """
-    return SentenceTransformer('multi-qa-MiniLM-L6-dot-v1')
+    return SentenceTransformer('multi-qa-MiniLM-L6-dot-v1', device='cpu')
 
 
 def get_embeddings(text: str) -> np.ndarray:
@@ -166,6 +167,12 @@ def get_string_from_row(row: pd.Series, columns: list) -> str:
     return s
 
 
+def tokenize(text: str) -> list[str]:
+    word_tokens = word_tokenize(text.lower())
+    filtered_tokens = [w for w in word_tokens if w not in stopwords and w not in punctuations]
+    return filtered_tokens
+
+
 def get_string_to_encode(data: dict) -> str:
     """Returns a string which is a concatenation of model description, sample questions, and sample contexts from
     the dataset the model was trained on.
@@ -192,8 +199,7 @@ def get_string_to_encode(data: dict) -> str:
         shuffled_string = shuffled_string.replace("\n", "")
     
     total_string = data["description"] + shuffled_string
-    word_tokens = word_tokenize(total_string)
-    filtered_tokens = [w for w in word_tokens if not w.lower() in stopwords and not w.lower() in punctuations]
+    filtered_tokens = tokenize(total_string)
     return " ".join(filtered_tokens)
 
 
@@ -239,7 +245,7 @@ def create_map(filenames: list = None, force_recreate: bool = False) -> list:
     return past_map
 
 
-def get_top_k_models(question: str, context: str, k: int = 2) -> list:
+def get_top_k_models(question: str, context: str, k: int = 2, picked_models: list = []) -> list:
     """Gets top k models based on similarity of embeddings to the embedding of the question+context
 
     :param question: Question from user
@@ -249,9 +255,14 @@ def get_top_k_models(question: str, context: str, k: int = 2) -> list:
     """
     model_map = create_map()
     embedding = get_embeddings(f"question: {question} context: {context}")
+    picked_model_names = [model['model_name'] for model in picked_models]
+    #breakpoint()
 
     for model in model_map:
-        model["similarity"] = compute_similarity_between_embeddings(embedding, model["embeddings"])
+        if model['model_name'] in picked_model_names:
+            model["similarity"] = -math.inf
+        else:
+            model["similarity"] = compute_similarity_between_embeddings(embedding, model["embeddings"])
 
     def sort_key(x):
         return x["similarity"]
@@ -262,7 +273,8 @@ def get_top_k_models(question: str, context: str, k: int = 2) -> list:
 
 def filter_map(filter_field: str,
                field_val: str,
-               k: int):
+               k: int,
+               picked_models: list = []):
     """Returns a filtered map of top k models based on field (type/domain)
 
     :param filter_field: filter based on "type" or "domain"
@@ -273,7 +285,10 @@ def filter_map(filter_field: str,
     """
     model_map = create_map()
     filtered_models = []
+    picked_model_names = [model['model_name'] for model in picked_models]
     for model in model_map:
+        if model['model_name'] in picked_model_names:
+            continue
 
         if field_val in model[filter_field]:
             filtered_models.append(model)

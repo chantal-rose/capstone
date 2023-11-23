@@ -10,16 +10,14 @@ from utils import get_embeddings
 import os
 
 import sys 
-# Python program to illustrate the intersection
-# of two lists using set() and intersection()
-def Intersection(lst1, lst2):
-    return set(lst1).intersection(lst2)
+
 
 # Python program to illustrate the intersection
 # of two lists in most simple way
 def intersection(lst1, lst2):
     intersection_list = [value for value in lst1 if value in lst2]
     return intersection_list
+
 
 def evaluate(df, k):
     correct = 0
@@ -35,13 +33,12 @@ def evaluate(df, k):
 
         best_models = nlargest(k, model_map, key=lambda x: x["similarity"])
         model_names = [model["model_name"] for model in best_models]
-        
-<<<<<<< Updated upstream:evaluate_model_selection.py
+                
         if len(intersection(model_names, row["models"])):
-=======
-        if len(Intersection(model_names, row["models"])):
->>>>>>> Stashed changes:evaluation/evaluate_model_selection.py
             correct += 1
+            
+        if i % 50 == 0:
+            print(i)
 
     print("Accuracy: ", correct / total)
 

@@ -1,10 +1,12 @@
 """Main model for a pass through the system"""
 # from flask import Flask, request
-from llm_utils import GPT4InputParser
+import pandas as pd
+
 from model_pipelines import get_answer_from_model
 from model_pipelines import load_models
 from model_pipelines import load_model
 from model_pipelines import load_pipeline
+from open_domain import get_context
 from utils import filter_map
 from utils import get_final_answer
 from utils import get_top_k_models
@@ -26,48 +28,47 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
     :param user_input: Raw user query
     :return:
     """
-    # parser = GPT4InputParser()
-    # parser.parse(user_input)
-
-    # type = parser.type
-    # domain = parser.domain
-    # question = parser.question
-    # context = parser.context
     type = "extractive"
-    
 
     if not context:
         context = get_context(question)
-    domain = domain_test#domain_label(context)
+    domain = domain_test
 
-    top_k_embedding_models = get_top_k_models(question, context, K)
     top_k_domain_models = filter_map(DOMAIN, domain, K)
-    top_k_type_models = filter_map(TYPE, type, K)
+    top_k_embedding_models = get_top_k_models(question, context, K, top_k_domain_models)
+    top_k_type_models = filter_map(TYPE, type, K, top_k_embedding_models + top_k_domain_models)
 
     answers = []
     answer_scores = []
+    final_models = []
 
     all_models = top_k_embedding_models + top_k_domain_models + top_k_type_models
     
-    # TODO: Consider making it a set so that the same models aren't reinforcing the wrong answer
+    all_model_names = [model["model_name"] for model in all_models]
+    if len(all_model_names) != len(set(all_model_names)):
+        print("Not equal")
+        breakpoint()
+    
+    # TODO: Consider making it a set so that the same models aren"t reinforcing the wrong answer
 
     for model in all_models:
-        #print(model['model_name'])
-        models = load_model(model['model_name'])
-        if models == {}:
-            continue
+        models = load_model(model["model_name"])
+
         pipeline = load_pipeline(models, model)
         try:
+            print("Model: ", model["model_name"])
             answer, confidence_score = get_answer_from_model(pipeline, models, model, question, context)
         except Exception as e:
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            print("Exception for", model["model_name"])
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             print(e)
             continue
         else:
             if answer:
+                final_models.append(model["model_name"])
                 answers.append(answer)
                 answer_scores.append(confidence_score)
-        #del models[model['model_name']]['model']
-        
 
     temp_scores = [score for score in answer_scores if score is not None]
     average_score = sum(temp_scores) / len(temp_scores)
@@ -77,11 +78,10 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
 
     # if not verify_answer(question, context, final_answer):
     #     final_answer += " (unknown)"
-    print("Models picked:\n")
-    all_models = [model["model_name"] for model in all_models]
-    print(all_models)
-    print("All returned answers:\n")
-    print(answers)
+    print("Question: ", question)
+    df = pd.DataFrame(list(zip(final_models, answers, answer_scores)),
+               columns =["Model", "Answer", "Score"])
+    print(df)
     print("Final answer:\n")
     print(final_answer)
     return final_answer
@@ -91,7 +91,7 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
 
 
 # TODO: Create flask app endpoint
-# @app.route("/ask", methods=['POST'])
+# @app.route("/ask", methods=["POST"])
 # def ask_system():
 #     request_data = request.get_json()
 #
