@@ -99,6 +99,15 @@ def compute_similarity_between_embeddings(embedding1: torch.tensor, embedding2: 
     return util.dot_score(embedding1, embedding2)
 
 
+def get_embedding_similarity(answer1, answer2):
+    model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+    # Compute embedding for both lists
+    embedding_1 = model.encode(answer1, convert_to_tensor=True)
+    embedding_2 = model.encode(answer2, convert_to_tensor=True)
+
+    return util.pytorch_cos_sim(embedding_1, embedding_2).item()
+
 @lru_cache()
 def fetch_embedding_model() -> SentenceTransformer:
     """Downloads the model for creating embeddings if not cached.
@@ -300,36 +309,31 @@ def filter_map(filter_field: str,
     return sorted_filtered_models[:k]
 
 
-def get_final_answer(answer_candidates: list,
-                     confidence_score_of_candidates: list):
+def get_final_answer(answer_candidates: list):
     """Returns a single answer from a list of candidates based on a custom formula based on confidence scores and 
     pairwise similarity.
 
     :param answer_candidates: List of answers from different models
-    :param confidence_score_of_candidates: List of scores returned by the models
     :return: list of dictionaries where each entry is meta_data of each map
     """  
-    max_score_idx = 0
-    max_formula_score = -math.inf
-    
+    similarity_score = [0] * len(answer_candidates)
+
     for i in range(len(answer_candidates)):
-        curr_score = 0
         for j in range(i+1, len(answer_candidates)):
-            curr_score += (confidence_score_of_candidates[j] * (get_answer_similarity_score(answer_candidates[i],
-                                                                                            answer_candidates[j])))
-        curr_score *= confidence_score_of_candidates[i]
-        
-        if curr_score > max_formula_score:
-            max_formula_score = curr_score
-            max_score_idx = i
-            
-    return answer_candidates[max_score_idx]
+            score = get_answer_similarity_score(answer_candidates[i],
+                                                answer_candidates[j],
+                                                "embedding_similarity")
+            similarity_score[i] += score
+            similarity_score[j] += score
+    print(similarity_score)
+    return answer_candidates[similarity_score.index(max(similarity_score))]
 
 
 SIMILARITY_METRIC_FUNCTION_MAP = {
     "jaccard_index": get_jaccard_index,
     "cosine_similarity": get_cosine_similarity_score,
     "euclidean_distance": get_euclidean_distance,
+    "embedding_similarity": get_embedding_similarity,
 }
 
 if __name__ == "__main__":

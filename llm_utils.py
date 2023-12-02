@@ -19,6 +19,7 @@ type_pattern = re.compile(r"^Type:\s([\w ]+)")
 
 DEFAULT_MODEL = "gpt-3.5-turbo-1106"
 
+
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
 def query_llm(messages: list[dict[str, str]], model: str = DEFAULT_MODEL) -> str:
     """Interacts with an OpenAI model and returns a response,
@@ -33,6 +34,7 @@ def query_llm(messages: list[dict[str, str]], model: str = DEFAULT_MODEL) -> str
     )
     response = completion.choices[0].message.content
     return response
+
 
 def domain_label(context):
     SKLLMConfig.set_openai_key(os.environ["OPENAI_API_KEY"])

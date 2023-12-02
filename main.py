@@ -57,7 +57,7 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
         pipeline = load_pipeline(models, model)
         try:
             print("Model: ", model["model_name"])
-            answer, confidence_score = get_answer_from_model(pipeline, models, model, question, context)
+            answer = get_answer_from_model(pipeline, models, model, question, context)
         except Exception as e:
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             print("Exception for", model["model_name"])
@@ -68,13 +68,8 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
             if answer:
                 final_models.append(model["model_name"])
                 answers.append(answer)
-                answer_scores.append(confidence_score)
 
-    temp_scores = [score for score in answer_scores if score is not None]
-    average_score = sum(temp_scores) / len(temp_scores)
-    answer_scores = [score if score is not None else average_score for score in answer_scores]
-
-    final_answer = get_final_answer(answers, answer_scores)
+    final_answer = get_final_answer(answers)
 
     # if not verify_answer(question, context, final_answer):
     #     final_answer += " (unknown)"

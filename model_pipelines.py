@@ -165,32 +165,34 @@ def load_pipeline(models: dict, model_dict: dict) -> pipeline:
     return pipeline(models[model_name][TASK], model=models[model_name][MODEL], tokenizer=models[model_name][TOKENIZER], device=device)
 
 
-def get_generative_answer(question, context):
-  source_encoding=tokenizer(
-    question,
-    context,
-    max_length=512,
-    
-    padding="max_length",
-    truncation="only_second",
-    return_attention_mask=True,
-    add_special_tokens=True,
-    return_tensors="pt")
-  
-  generated_ids=model.generate(
-      input_ids=source_encoding["input_ids"],
-      attention_mask=source_encoding["attention_mask"],max_new_tokens=512,output_scores=True, return_dict_in_generate=True )
+def get_generative_answer(question, context, tokenizer, model):
+    source_encoding = tokenizer(
+        question,
+        context,
+        max_length=512,
 
-  preds=[tokenizer.decode(gen_id, skip_special_tokens=True, clean_up_tokenization_spaces=True) for gen_id in generated_ids["sequences"]]
+        padding="max_length",
+        truncation="only_second",
+        return_attention_mask=True,
+        add_special_tokens=True,
+        return_tensors="pt")
 
-  return "".join(preds)
+    generated_ids = model.generate(
+        input_ids=source_encoding["input_ids"],
+        attention_mask=source_encoding["attention_mask"],max_new_tokens=512,output_scores=True,
+        return_dict_in_generate=True )
+
+    preds = [tokenizer.decode(gen_id, skip_special_tokens=True, clean_up_tokenization_spaces=True) for gen_id
+             in generated_ids["sequences"]]
+
+    return "".join(preds)
 
 
 def get_answer_from_model(pipe: pipeline,
                           models: dict,
                           model_dict: dict,
                           question: str,
-                          context: Union[str, None]) -> tuple:
+                          context: Union[str, None]) -> str:
     """Gets an answer from a model.
 
     The way the pipeline object is used depends on the task being performed.
@@ -200,7 +202,7 @@ def get_answer_from_model(pipe: pipeline,
     :param model_dict: The model json which contains important information about the model
     :param question: Question
     :param context: Context
-    :return: Tuple of answer and score
+    :return: Answer
     :raise Exception if task not supported
     """
     set_seed(42)
@@ -208,28 +210,21 @@ def get_answer_from_model(pipe: pipeline,
     task = models[model_name][TASK]
     if task == QUESTION_ANSWERING:
         output = pipe(question=question, context=context)
-        return output["answer"], output["score"]
+        return output["answer"]
     elif task == TEXT2TEXT_GENERTAION:
         text = "question: {} context: {} answer: ".format(question, context)
         pattern = re.compile(r".*answer: (.*)")
         output = pipe(text, max_length=100, num_return_sequences=1)
-        print("Generated answer: ", output)
         try:
             answer = pattern.match(output[0]["generated_text"], flags=re.DOTALL).groups()[0]
         except Exception as e:
             answer = output[0]["generated_text"]
-        if answer:
-            return answer, get_generative_confidence(question, context, answer)
-        else:
-            return "", 0.0
+        return answer
     elif task == TEXT_GENERATION:
-        answer = get_generative_answer(question, context)
-        if answer:
-            return answer, get_generative_confidence(question, context, answer)
-        else:
-            return "", 0.0
+        answer = get_generative_answer(question, context, models[model_name][TOKENIZER], models[model_name][MODEL])
+        return answer
     elif task == TEXT_CLASSIFICATION:
         output = pipe(question)
-        return output[0]["label"], output[0]["score"]
+        return output[0]["label"]
     else:
         raise Exception("Task not supported by pipeline.")
