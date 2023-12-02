@@ -12,7 +12,7 @@ from transformers import (AutoModelForCausalLM,
                           )
 from transformers import pipeline, set_seed
 
-from answer_verification import get_generative_confidence
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 MODEL = "model"
@@ -87,7 +87,6 @@ def load_models():  # pragma: no cover
 
 @lru_cache()
 def load_model(model_name):
-
     if model_name == 'akdeniz27/deberta-v2-xlarge-cuad':
         model = {"akdeniz27/deberta-v2-xlarge-cuad": {
             TOKENIZER: AutoTokenizer.from_pretrained("akdeniz27/deberta-v2-xlarge-cuad"),
@@ -159,8 +158,8 @@ def load_pipeline(models: dict, model_dict: dict) -> pipeline:
     :param model_dict: The model json which contains important information about the model
     :return Pipeline object
     """
-    device = "cpu"
-    # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = "cpu"
+    
     model_name = model_dict[MODEL_NAME]
     return pipeline(models[model_name][TASK], model=models[model_name][MODEL], tokenizer=models[model_name][TOKENIZER], device=device)
 
@@ -178,8 +177,8 @@ def get_generative_answer(question, context, tokenizer, model):
         return_tensors="pt")
 
     generated_ids = model.generate(
-        input_ids=source_encoding["input_ids"],
-        attention_mask=source_encoding["attention_mask"],max_new_tokens=512,output_scores=True,
+        input_ids=source_encoding["input_ids"].to(device),
+        attention_mask=source_encoding["attention_mask"].to(device),max_new_tokens=512,output_scores=True,
         return_dict_in_generate=True )
 
     preds = [tokenizer.decode(gen_id, skip_special_tokens=True, clean_up_tokenization_spaces=True) for gen_id

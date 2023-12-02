@@ -4,17 +4,21 @@ import argparse
 import pandas as pd
 from transformers import set_seed
 
+from llm_utils import domain_label
 from main import send_input_to_system
 from pycocotools.coco import COCO
 from pycocoevalcap.eval import COCOEvalCap
+
 import json
 import csv
 
 from tqdm import tqdm
 
+import traceback
+
 # model_map = load_models()
 model_map = {}
-limit = 25
+limit = 1
 
 
 def evaluate(input_file, output_file):
@@ -34,9 +38,6 @@ def evaluate(input_file, output_file):
         if ctr == limit:
             break
 
-        if isinstance(row["context"], float) or row["domain"] == "legal":
-            continue
-
         tqdm.write("############\n")
         # tqdm.write("QUESTION: " + row["question"] + "\n")
         # tqdm.write("CONTEXT: " + row["context"] + "\n")
@@ -44,12 +45,13 @@ def evaluate(input_file, output_file):
         annotations.append({
             "image_id": str(row["image_id"]),
             "id": str(row["image_id"]),
-            "caption": row["answers"]
+            "caption": row["answer"]
         })
         if not isinstance(row["domain"], str):
             domain = "None"
         else:
             domain = row["domain"]
+            #domain = domain_label(row["context"])
        
         try:
             system_output = send_input_to_system(model_map, row["question"], row["context"], domain)
@@ -58,16 +60,24 @@ def evaluate(input_file, output_file):
             print("Exception in datapoint")
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             print(e)
+            traceback.print_exc()
             generated_answers["id"].append(row["image_id"])
             generated_answers["output"].append("ERROR")
             
-            with open("results.csv", "a", newline="") as csvfile:
-                fieldnames = ["Question", "Context", "Result", "Answer"]
+            with open("results_generated.csv", "a", newline="") as csvfile:
+                fieldnames = ["Question", "Domain", "Result"]
+                
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writerow({"Question": row["question"],
-                                 "Context": row["context"],
-                                 "Result": "ERROR",
-                                 "Answer": row["answers"]})
+                                 "Domain": domain,
+                                 "Result": "ERROR"
+                                 })
+            with open("results_expected.csv", "a", newline="") as csvfile:
+                fieldnames = ["Question", "Domain", "Answer"]
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writerow({"Question": row["question"],
+                                 "Domain": row['domain'],
+                                 "Answer": row["answer"]})
 
             captions.append({
                 "image_id": str(row["image_id"]),
@@ -79,13 +89,19 @@ def evaluate(input_file, output_file):
             generated_answers["id"].append(row["image_id"])
             generated_answers["output"].append(system_output)
             
-            with open("results.csv", "a", newline="") as csvfile:
-                fieldnames = ["Question", "Context", "Result", "Answer"]
+            with open("results_generated.csv", "a", newline="") as csvfile:
+                fieldnames = ["Question", "Domain", "Result"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writerow({"Question": row["question"],
-                                 "Context": row["context"],
-                                 "Result": system_output,
-                                 "Answer": row["answers"]})
+                                 "Domain": domain,
+                                 "Result": system_output
+                                 })
+            with open("results_expected.csv", "a", newline="") as csvfile:
+                fieldnames = ["Question", "Domain", "Answer"]
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                writer.writerow({"Question": row["question"],
+                                 "Domain": row['domain'],
+                                 "Answer": row["answer"]})
 
             captions.append({
                 "image_id": str(row["image_id"]),
@@ -126,5 +142,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    dataset = pd.read_csv(args.data_path, delimiter="\t")
+    #dataset = pd.read_csv(args.data_path, delimiter=",")
     evaluate(args.data_path, args.output_path)
