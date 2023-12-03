@@ -20,3 +20,4 @@ tqdm==4.66.1
 pycocoevalcap==1.2
 pycocotools==2.0.7
 scikit-llm==0.1.0b3
+code_bert_score==0.4.1

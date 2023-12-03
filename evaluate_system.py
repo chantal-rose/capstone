@@ -13,6 +13,7 @@ import json
 import csv
 
 from tqdm import tqdm
+import code_bert_score
 
 import traceback
 
@@ -31,6 +32,9 @@ def evaluate(input_file, output_file):
     images = []
     annotations = []
     captions = []
+
+    predictions=[]
+    ground_truth=[]
     generated_answers = {"id":[], "output":[]}
 
     ctr = 0
@@ -83,6 +87,8 @@ def evaluate(input_file, output_file):
                 "image_id": str(row["image_id"]),
                 "caption": "ERROR"
             })
+            predictions.append("ERROR")
+            ground_truth.append(row["answers"])
             continue
         else:
 
@@ -107,6 +113,8 @@ def evaluate(input_file, output_file):
                 "image_id": str(row["image_id"]),
                 "caption": system_output
             })
+            predictions.append(system_output)
+            ground_truth.append(row["answers"])
         ctr += 1
         
     references = {"images": images, "annotations": annotations}
@@ -131,7 +139,13 @@ def evaluate(input_file, output_file):
 
     coco_eval.evaluate()
 
-    for metric, score in coco_eval.eval.items():
+    #evaluate on bert score
+    pred_results = code_bert_score.score(cands=predictions, refs=ground_truth, lang='python')
+    bert_score = {"precision":pred_results[0].numpy()[0],"recall":pred_results[1].numpy()[0],"f1":pred_results[0].numpy()[2],"f3":pred_results[3].numpy()[0]}
+    cocoEval_score = coco_eval.eval
+
+    all_scores = {**bert_score,**cocoEval_score}
+    for metric, score in all_scores.items():
         tqdm.write(f"{metric}: {score:.3f}")
 
 
