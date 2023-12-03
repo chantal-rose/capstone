@@ -34,7 +34,7 @@ def evaluate(input_file, output_file):
     captions = []
 
     predictions=[]
-    references=[]
+    ground_truth=[]
     generated_answers = {"id":[], "output":[]}
 
     ctr = 0
@@ -88,7 +88,7 @@ def evaluate(input_file, output_file):
                 "caption": "ERROR"
             })
             predictions.append("ERROR")
-            references.append(row["answers"])
+            ground_truth.append(row["answers"])
             continue
         else:
 
@@ -114,7 +114,7 @@ def evaluate(input_file, output_file):
                 "caption": system_output
             })
             predictions.append(system_output)
-            references.append(row["answers"])
+            ground_truth.append(row["answers"])
         ctr += 1
         
     references = {"images": images, "annotations": annotations}
@@ -140,7 +140,7 @@ def evaluate(input_file, output_file):
     coco_eval.evaluate()
 
     #evaluate on bert score
-    pred_results = code_bert_score.score(cands=predictions, refs=references, lang='python')
+    pred_results = code_bert_score.score(cands=predictions, refs=ground_truth, lang='python')
     bert_score = {"precision":pred_results[0].numpy()[0],"recall":pred_results[1].numpy()[0],"f1":pred_results[0].numpy()[2],"f3":pred_results[3].numpy()[0]}
     cocoEval_score = coco_eval.eval
 
