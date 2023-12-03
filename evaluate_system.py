@@ -11,6 +11,7 @@ from pycocoevalcap.eval import COCOEvalCap
 
 import json
 import csv
+import numpy as np
 
 from tqdm import tqdm
 import code_bert_score
@@ -19,7 +20,7 @@ import traceback
 
 # model_map = load_models()
 model_map = {}
-limit = 1
+limit = 5
 
 
 def evaluate(input_file, output_file):
@@ -69,17 +70,19 @@ def evaluate(input_file, output_file):
             generated_answers["output"].append("ERROR")
             
             with open("results_generated.csv", "a", newline="") as csvfile:
-                fieldnames = ["Question", "Domain", "Result"]
+                fieldnames = ["QID", "Question", "Domain", "Result"]
                 
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writerow({"Question": row["question"],
+                writer.writerow({"QID": row['question_id'],
+                                 "Question": row["question"],
                                  "Domain": domain,
                                  "Result": "ERROR"
                                  })
             with open("results_expected.csv", "a", newline="") as csvfile:
-                fieldnames = ["Question", "Domain", "Answer"]
+                fieldnames = ["QID", "Question", "Domain", "Answer"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writerow({"Question": row["question"],
+                writer.writerow({"QID": row['question_id'],
+                                 "Question": row["question"],
                                  "Domain": row['domain'],
                                  "Answer": row["answer"]})
 
@@ -88,7 +91,7 @@ def evaluate(input_file, output_file):
                 "caption": "ERROR"
             })
             predictions.append("ERROR")
-            ground_truth.append(row["answers"])
+            ground_truth.append(row["answer"])
             continue
         else:
 
@@ -96,16 +99,18 @@ def evaluate(input_file, output_file):
             generated_answers["output"].append(system_output)
             
             with open("results_generated.csv", "a", newline="") as csvfile:
-                fieldnames = ["Question", "Domain", "Result"]
+                fieldnames = ["QID", "Question", "Domain", "Result"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writerow({"Question": row["question"],
+                writer.writerow({"QID": row['question_id'],
+                                 "Question": row["question"],
                                  "Domain": domain,
                                  "Result": system_output
                                  })
             with open("results_expected.csv", "a", newline="") as csvfile:
-                fieldnames = ["Question", "Domain", "Answer"]
+                fieldnames = ["QID", "Question", "Domain", "Answer"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writerow({"Question": row["question"],
+                writer.writerow({"QID": row['question_id'],
+                                 "Question": row["question"],
                                  "Domain": row['domain'],
                                  "Answer": row["answer"]})
 
@@ -114,7 +119,7 @@ def evaluate(input_file, output_file):
                 "caption": system_output
             })
             predictions.append(system_output)
-            ground_truth.append(row["answers"])
+            ground_truth.append(row["answer"])
         ctr += 1
         
     references = {"images": images, "annotations": annotations}
@@ -141,7 +146,7 @@ def evaluate(input_file, output_file):
 
     #evaluate on bert score
     pred_results = code_bert_score.score(cands=predictions, refs=ground_truth, lang='python')
-    bert_score = {"precision":pred_results[0].numpy()[0],"recall":pred_results[1].numpy()[0],"f1":pred_results[0].numpy()[2],"f3":pred_results[3].numpy()[0]}
+    bert_score = {"precision":np.mean(pred_results[0].numpy()),"recall":np.mean(pred_results[1].numpy()),"f1":np.mean(pred_results[2].numpy()),"f3":np.mean(pred_results[3].numpy())}
     cocoEval_score = coco_eval.eval
 
     all_scores = {**bert_score,**cocoEval_score}
