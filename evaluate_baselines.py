@@ -14,8 +14,8 @@ import csv
 from tqdm import tqdm
 
 torch.cuda.empty_cache()
-device = "cpu"
-limit = 25
+device = "cuda" if torch.cuda.is_available() else "cpu"
+limit = -1
 pipe = pipeline("text2text-generation", model="allenai/unifiedqa-t5-large",device=device)
 
 set_seed(42)
@@ -33,7 +33,7 @@ def evaluate(input_file, output_file):
     generated_answers = {"id":[], "output":[]}
 
     ctr = 0
-    for index, row in tqdm(eval_df.iterrows(), desc="Evaluating datapoints"):
+    for index, row in tqdm(eval_df.iterrows(), desc="Evaluating datapoints", total=len(eval_df)):
         if ctr == limit:
             break
 
@@ -44,7 +44,7 @@ def evaluate(input_file, output_file):
         annotations.append({
             "image_id": str(row["image_id"]),
             "id": str(row["image_id"]),
-            "caption": row["answers"]
+            "caption": row["answer"]
         })
        
         try:
@@ -56,13 +56,12 @@ def evaluate(input_file, output_file):
             generated_answers["id"].append(row["image_id"])
             generated_answers["output"].append("ERROR")
             
-            with open("results.csv", "a", newline="") as csvfile:
-                fieldnames = ["Question", "Context", "Result", "Answer"]
+            with open("results_baseline.csv", "a", newline="") as csvfile:
+                fieldnames = ["Question", "Domain", "Answer"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writerow({"Question": row["question"],
-                                 "Context": row["context"],
-                                 "Result": "ERROR",
-                                 "Answer": row["answers"]})
+                                 "Domain": row["domain"],
+                                 "Answer": row["answer"]})
 
             captions.append({
                 "image_id": str(row["image_id"]),
@@ -74,13 +73,12 @@ def evaluate(input_file, output_file):
             generated_answers["id"].append(row["image_id"])
             generated_answers["output"].append(system_output)
             
-            with open("results.csv", "a", newline="") as csvfile:
-                fieldnames = ["Question", "Context", "Result", "Answer"]
+            with open("results_baseline.csv", "a", newline="") as csvfile:
+                fieldnames = ["Question", "Domain", "Answer"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 writer.writerow({"Question": row["question"],
-                                 "Context": row["context"],
-                                 "Result": system_output,
-                                 "Answer": row["answers"]})
+                                 "Domain": row["domain"],
+                                 "Answer": row["answer"]})
 
             captions.append({
                 "image_id": str(row["image_id"]),
@@ -121,5 +119,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    dataset = pd.read_csv(args.data_path, delimiter="\t")
     evaluate(args.data_path, args.output_path)

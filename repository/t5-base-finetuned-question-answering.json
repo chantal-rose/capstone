@@ -6,7 +6,7 @@
   "dataset": ["duorc", "duorc", "squad"],
   "configs": ["SelfRC", "ParaphraseRC", ""],
   "columns": [["question", "plot"], ["question", "plot"], ["question", "context"]],
-  "domain": ["narrative"],
+  "domain": ["narrative", "general"],
   "task": "question-answering",
   "split" : ["validation", "validation", "validation"]
 }
