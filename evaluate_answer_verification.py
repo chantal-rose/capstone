@@ -1,41 +1,32 @@
-from answer_verification import verify_answer
+from answer_verification import verify_answer, verify_answer_gpt
 
 import pandas as pd
 from tqdm import tqdm
 import numpy as np
 
-dataset = pd.read_csv('eval_dataset_v2.csv')
+dataset = pd.read_csv('eval_dataset.csv')
 np.random.seed(42)
-dataset['shuffled_answers'] = np.random.permutation(dataset['answers'])
+dataset['shuffled_answer'] = np.random.permutation(dataset['answer'])
 
-original_verify = []
-shuffled_verify = []
+original_verify_boolq = []
+shuffled_verify_boolq = []
+original_verify_gpt = []
+shuffled_verify_gpt = []
 
-for pt in tqdm(dataset.to_dict(orient='records')):
-    if type(pt['context']) == float:
-        original_verify.append("NA")
-        shuffled_verify.append("NA")
-        continue
-    if verify_answer(pt['question'], pt['context'], pt['answers']):
-        original_verify.append("T")
-    else:
-        original_verify.append("F")
-    if not verify_answer(pt['question'], pt['context'], pt['shuffled_answers']):
-        shuffled_verify.append("T")
-    else:
-        shuffled_verify.append("F")
+for pt in tqdm(dataset.to_dict(orient='records'), total=len(dataset)):
+    original_verify_boolq.append(verify_answer(pt['question'], pt['context'], pt['answer']))
+    shuffled_verify_boolq.append(not verify_answer(pt['question'], pt['context'], pt['shuffled_answer']))
+    original_verify_gpt.append(verify_answer_gpt(pt['question'], pt['context'], pt['answer']))
+    shuffled_verify_gpt.append(not verify_answer_gpt(pt['question'], pt['context'], pt['shuffled_answer']))
 
-print(sum(x=="T" for x in original_verify))
-print(sum(x=="T" for x in shuffled_verify))
+print(sum(x for x in original_verify_boolq))
+print(sum(x for x in shuffled_verify_boolq))
+print(sum(x for x in original_verify_gpt))
+print(sum(x for x in shuffled_verify_gpt))
 
-if len(original_verify) != len(dataset) or len(shuffled_verify) != len(dataset):
-    with open("ans_ver_original.txt", 'w') as f:
-        for r in original_verify:
-            f.write(f"{r}\n")
-    with open("ans_ver_shuffled.txt", 'w') as f:
-        for r in shuffled_verify:
-            f.write(f"{r}\n")
-else:
-    dataset['original_verify'] = original_verify
-    dataset['shuffled_verify'] = shuffled_verify
-    dataset.to_csv('ans_ver.csv')
+dataset['original_verify_boolq'] = original_verify_boolq
+dataset['shuffled_verify_boolq'] = shuffled_verify_boolq
+dataset['original_verify_gpt'] = original_verify_gpt
+dataset['shuffled_verify_gpt'] = shuffled_verify_gpt
+
+dataset.drop(columns=["context"]).to_csv('ans_ver.csv')

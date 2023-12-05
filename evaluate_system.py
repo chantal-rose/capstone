@@ -20,7 +20,7 @@ import traceback
 
 # model_map = load_models()
 model_map = {}
-limit = 5
+limit = -1
 
 
 def evaluate(input_file, output_file):
@@ -39,7 +39,7 @@ def evaluate(input_file, output_file):
     generated_answers = {"id":[], "output":[]}
 
     ctr = 0
-    for index, row in tqdm(eval_df.iterrows(), desc="Evaluating datapoints"):
+    for index, row in tqdm(eval_df.iterrows(), total=len(eval_df), desc="Evaluating datapoints"):
         if ctr == limit:
             break
 
@@ -132,6 +132,13 @@ def evaluate(input_file, output_file):
 
     pd.DataFrame(generated_answers).to_csv(output_file, index=False)
 
+    #evaluate on bert score
+    pred_results = code_bert_score.score(cands=predictions, refs=ground_truth, lang='python')
+    bert_score = {"precision":np.mean(pred_results[0].numpy()),"recall":np.mean(pred_results[1].numpy()),"f1":np.mean(pred_results[2].numpy()),"f3":np.mean(pred_results[3].numpy())}
+    
+    for metric, score in bert_score.items():
+        tqdm.write(f"{metric}: {score:.3f}")
+    
     # create coco object and coco_result object
     annotation_file = "references.json"
     results_file = "captions.json"
@@ -141,12 +148,7 @@ def evaluate(input_file, output_file):
 
     # create coco_eval object by taking coco and coco_result
     coco_eval = COCOEvalCap(coco, coco_result)
-
     coco_eval.evaluate()
-
-    #evaluate on bert score
-    pred_results = code_bert_score.score(cands=predictions, refs=ground_truth, lang='python')
-    bert_score = {"precision":np.mean(pred_results[0].numpy()),"recall":np.mean(pred_results[1].numpy()),"f1":np.mean(pred_results[2].numpy()),"f3":np.mean(pred_results[3].numpy())}
     cocoEval_score = coco_eval.eval
 
     all_scores = {**bert_score,**cocoEval_score}

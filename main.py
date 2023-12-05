@@ -28,7 +28,7 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
     :param user_input: Raw user query
     :return:
     """
-    type = "extractive"
+    #type = "extractive"
 
     if not context:
         context = get_context(question)
@@ -36,7 +36,7 @@ def send_input_to_system(models: dict, question: str, context: str, domain_test:
 
     top_k_domain_models = filter_map(DOMAIN, domain, K)
     top_k_embedding_models = get_top_k_models(question, context, K, top_k_domain_models)
-    top_k_type_models = filter_map(TYPE, type, K, top_k_embedding_models + top_k_domain_models)
+    top_k_type_models = []  #filter_map(TYPE, type, K, top_k_embedding_models + top_k_domain_models)
 
     answers = []
     answer_scores = []
