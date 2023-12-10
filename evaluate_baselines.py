@@ -32,10 +32,7 @@ def evaluate(input_file, output_file):
     captions = []
     generated_answers = {"id":[], "output":[]}
 
-    ctr = 0
     for index, row in tqdm(eval_df.iterrows(), desc="Evaluating datapoints", total=len(eval_df)):
-        if ctr == limit:
-            break
 
         tqdm.write("############\n")
         tqdm.write("QUESTION: "+ row["question"]+"\n")
@@ -57,11 +54,12 @@ def evaluate(input_file, output_file):
             generated_answers["output"].append("ERROR")
             
             with open("results_baseline.csv", "a", newline="") as csvfile:
-                fieldnames = ["Question", "Domain", "Answer"]
+                fieldnames = ["qid", "question", "domain", "answer"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writerow({"Question": row["question"],
-                                 "Domain": row["domain"],
-                                 "Answer": row["answer"]})
+                writer.writerow({"qid": row["question_id"],
+                                 "question": row["question"],
+                                 "domain": row["domain"],
+                                 "answer": row["answer"]})
 
             captions.append({
                 "image_id": str(row["image_id"]),
@@ -74,17 +72,17 @@ def evaluate(input_file, output_file):
             generated_answers["output"].append(system_output)
             
             with open("results_baseline.csv", "a", newline="") as csvfile:
-                fieldnames = ["Question", "Domain", "Answer"]
+                fieldnames = ["qid", "question", "domain", "answer"]
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                writer.writerow({"Question": row["question"],
-                                 "Domain": row["domain"],
-                                 "Answer": row["answer"]})
+                writer.writerow({"qid": row["question_id"],
+                                 "question": row["question"],
+                                 "domain": row["domain"],
+                                 "answer": row["answer"]})
 
             captions.append({
                 "image_id": str(row["image_id"]),
                 "caption": system_output
             })
-        ctr += 1
         
     references = {"images": images, "annotations": annotations}
 
